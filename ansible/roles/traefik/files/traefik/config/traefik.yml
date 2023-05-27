@@ -1,0 +1,8 @@
+---
+http:
+  routers:
+    api:
+      rule: Host(`traefik.damoreira.ml`)
+      service: api@internal
+      tls:
+        certResolver: letsencrypt

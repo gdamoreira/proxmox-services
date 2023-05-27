@@ -1,0 +1,35 @@
+---
+serversTransport:
+  insecureSkipVerify: true
+  
+entryPoints:
+  http:
+    address: :80
+
+  https:
+    address: :443
+    http:
+      tls:
+        certResolver: letsencrypt
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      email: "glhedamoreira@gmail.com"
+      storage: /etc/traefik/acme.json
+      httpChallenge:
+        entryPoint: http
+
+providers:
+  file:
+    directory: /etc/traefik/config
+    watch: true
+
+api:
+  dashboard: true
+  insecure: true
+  debug: true
+
+log:
+  level: DEBUG
+  filePath: "/etc/traefik/log/traefik.log"

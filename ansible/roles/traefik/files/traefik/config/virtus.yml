@@ -1,0 +1,15 @@
+---
+http:
+  routers:
+    virtus-router:
+      entryPoints:
+        - https
+      rule: Host(`pve.damoreira.ml`)
+      service: virtus
+      tls:
+        certResolver: letsencrypt
+  services:
+    virtus:
+      loadBalancer:
+        servers:
+        - url: https://10.0.0.6:8006

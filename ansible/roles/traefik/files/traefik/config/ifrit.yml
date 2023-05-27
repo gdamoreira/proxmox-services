@@ -1,0 +1,15 @@
+---
+http:
+  routers:
+    ifrit-router:
+      entryPoints:
+        - https
+      rule: Host(`ifrit.damoreira.ml`)
+      service: ifrit
+      tls:
+        certResolver: letsencrypt
+  services:
+    ifrit:
+      loadBalancer:
+        servers:
+        - url: https://10.0.0.1:5757

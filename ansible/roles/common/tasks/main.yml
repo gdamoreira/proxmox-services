@@ -1,0 +1,12 @@
+---
+- name: Upgrade dependencies
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: full
+  tags: always
+
+- name: Install kitty-terminfo
+  ansible.builtin.apt:
+    pkg:
+      - kitty-terminfo
+    state: latest
