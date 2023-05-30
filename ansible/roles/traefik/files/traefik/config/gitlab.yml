@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    gitlab-router:
+      rule: Host(`gitlab.damoreira.ml`)
+      service: gitlab
+  services:
+    gitlab:
+      loadBalancer:
+        servers:
+        - url: https://10.0.0.66

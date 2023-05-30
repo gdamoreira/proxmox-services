@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    idrac-router:
+      rule: Host(`idrac.damoreira.ml`)
+      service: idrac
+  services:
+    idrac:
+      loadBalancer:
+        servers:
+        - url: https://10.0.0.4
