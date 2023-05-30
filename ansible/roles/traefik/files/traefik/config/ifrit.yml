@@ -2,12 +2,8 @@
 http:
   routers:
     ifrit-router:
-      entryPoints:
-        - https
       rule: Host(`ifrit.damoreira.ml`)
       service: ifrit
-      tls:
-        certResolver: letsencrypt
   services:
     ifrit:
       loadBalancer:

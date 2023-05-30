@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    nexus-router:
+      rule: Host(`nexus.damoreira.ml`)
+      service: nexus
+  services:
+    nexus:
+      loadBalancer:
+        servers:
+        - url: https://10.0.0.67:8443

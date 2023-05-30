@@ -2,6 +2,8 @@
 http:
   routers:
     api:
+      entryPoints:
+      - https
       rule: Host(`traefik.damoreira.ml`)
       service: api@internal
       tls:

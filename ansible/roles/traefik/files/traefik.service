@@ -2,6 +2,8 @@
 Description=Traefik service
 
 [Service]
+Environment=CLOUDFLARE_EMAIL=glhedamoreira@gmail.com
+Environment=CLOUDFLARE_API_KEY=67eeba6fb422e3377a0f3d50792fc0b253c98
 User=traefik
 Group=traefik
 ExecStart=traefik

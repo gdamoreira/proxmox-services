@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    teamcity-router:
+      rule: Host(`teamcity.damoreira.ml`)
+      service: teamcity
+  services:
+    teamcity:
+      loadBalancer:
+        servers:
+        - url: http://10.0.0.61
