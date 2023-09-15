@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    next-router:
+      rule: Host(`next.damoreira.ml`)
+      service: next
+  services:
+    next:
+      loadBalancer:
+        servers:
+        - url: https://10.0.0.90
