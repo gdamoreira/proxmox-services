@@ -8,4 +8,4 @@ http:
     sso:
       loadBalancer:
         servers:
-        - url: http://10.0.0.3:8080
+        - url: https://10.0.0.3:8443/
