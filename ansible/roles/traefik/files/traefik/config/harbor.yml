@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    harbor-router:
+      rule: Host(`harbor.damoreira.ml`)
+      service: harbor
+  services:
+    harbor:
+      loadBalancer:
+        servers:
+        - url: http://10.0.0.8

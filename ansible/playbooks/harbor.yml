@@ -1,0 +1,5 @@
+---
+- hosts: harbor
+  roles:
+    - { role: common, tags: all }
+    - { role: harbor, tags: harbor }

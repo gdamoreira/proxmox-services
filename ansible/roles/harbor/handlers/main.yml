@@ -1,0 +1,11 @@
+---
+- name: Start Harbor
+  docker_container:
+    name: harbor
+
+- name: Restart Harbor
+  docker_container:
+    name: harbor
+    state: started
+    restart: true
+  loop: "{{ docker_images.stdout_lines }}"

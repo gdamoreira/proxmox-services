@@ -1,0 +1,111 @@
+---
+- name: Include config vars
+  ansible.builtin.include_vars: "vars/default.yml"
+
+- name: Install aptitude
+  apt:
+    name: aptitude
+    state: latest
+    update_cache: true
+
+- name: Install required system packages
+  apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      - virtualenv
+      - python3-setuptools
+    state: latest
+    update_cache: true
+
+- name: Add Docker GPG apt Key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker Repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu focal stable
+    state: present
+
+- name: Update apt and install docker-ce
+  apt:
+    name: docker-ce
+    state: latest
+    update_cache: true
+
+- name: Install Docker Module for Python
+  pip:
+    name: docker
+
+- name: Check Harbor directory existence
+  stat: "path={{ harbor_home_dir }}/harbor"
+  register: harbor_downloaded
+
+- name: Download Harbor
+  ansible.builtin.unarchive:
+    src: "{{ harbor_offline_installer_url }}"
+    dest: "{{ harbor_home_dir }}"
+    remote_src: true
+  when: not harbor_downloaded.stat.exists
+
+- name: Create Harbor config file
+  ansible.builtin.template:
+    src: harbor.yml.j2
+    dest: "{{ harbor_home_dir }}/harbor/harbor.yml"
+    mode: "0644"
+
+- name: Install Harbor
+  ansible.builtin.shell:
+    chdir: "{{ harbor_home_dir }}"
+    cmd: "./harbor/install.sh"
+
+- name: Create Harbor group
+  ansible.builtin.group:
+    name: harbor
+    state: present
+
+- name: Create Harbor user
+  ansible.builtin.user:
+    name: harbor
+    group: harbor
+    shell: /sbin/nologin
+    state: present
+    create_home: false
+
+# - name: Set port binding capability on Harbor
+#   community.general.capabilities:
+#     path: /usr/local/bin/traefik
+#     capability: cap_net_bind_service+ep
+#     state: present
+#   notify:
+#     - Restart Traefik
+
+# - name: Copy Harbor config
+#   ansible.builtin.copy:
+#     src: traefik
+#     dest: /etc
+#     mode: "0755"
+#   notify:
+#     - Restart Traefik
+
+# - name: Create Traefik config file
+#   ansible.builtin.template:
+#     src: traefik.yml.j2
+#     dest: /etc/traefik/traefik.yml
+#     mode: "0644"
+#   notify:
+#     - Restart Traefik
+
+# - name: Copy systemd service file to server
+#   ansible.builtin.copy:
+#     src: traefik.service
+#     dest: /etc/systemd/system
+#     owner: root
+#     group: root
+#     mode: "0644"
+#   notify:
+#     - Start Traefik

@@ -38,6 +38,7 @@ variable "gateway_ip" {
 // Services variables
 //
 
+// traefik
 variable "traefik_lxcid" {
   type    = number
   default = 500
@@ -51,4 +52,20 @@ variable "traefik_mac" {
 variable "traefik_ip" {
   type    = string
   default = "10.0.1.1/16"
+}
+
+// harbor
+variable "harbor_lxcid" {
+  type    = number
+  default = 501
+}
+
+variable "harbor_mac" {
+  type    = string
+  default = "F0:C3:FC:64:76:4F"
+}
+
+variable "harbor_ip" {
+  type    = string
+  default = "10.0.0.8/16"
 }
