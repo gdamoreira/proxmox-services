@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    suwayomi-router:
+      rule: Host(`mangareader.damoreira.ml`)
+      service: suwayomi
+  services:
+    suwayomi:
+      loadBalancer:
+        servers:
+        - url: http://10.0.0.10:4567

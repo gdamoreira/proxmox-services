@@ -1,0 +1,53 @@
+---
+- name: Include config vars
+  ansible.builtin.include_vars: "vars/default.yml"
+
+- name: Upgrade all packages
+  dnf:
+    name: "*"
+    state: latest
+
+- name: Install dependencies
+  ansible.builtin.dnf:
+    name:
+      - unzip
+      - tar
+      - java-21-openjdk-devel
+    state: latest
+
+- name: Fetch Java version
+  shell: java -version 2>&1 | grep version | awk '{print $3}' | sed 's/"//g'
+  register: java_version
+
+- name: Validate Java version
+  assert:
+    that: 
+      - "java_version.stdout is version('21', '>=')"
+
+- name: Create Kafka group
+  ansible.builtin.group:
+    name: kafka
+    state: present
+
+- name: Create Kafka user
+  ansible.builtin.user:
+    name: kafka
+    group: kafka
+    shell: /sbin/nologin
+    state: present
+    create_home: false
+
+- name: Check Kafka folder exists
+  stat: "path={{ kafka_home_dir }}/kafka"
+  register: kafka_downloaded
+
+- name: Download Kafka
+  ansible.builtin.unarchive:
+    src: "{{ kafka_offline_installer_url }}"
+    dest: "{{ kafka_home_dir }}"
+    remote_src: true
+  when: not kafka_downloaded.stat.exists
+
+- name: Move extracted kafka folder to correct path
+  command: mv {{ kafka_home_dir }}/{{ kafka_unpacked_dir }} {{ kafka_home_dir }}/kafka
+  when: not kafka_downloaded.stat.exists

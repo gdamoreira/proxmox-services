@@ -69,3 +69,19 @@ variable "harbor_ip" {
   type    = string
   default = "10.0.0.8/16"
 }
+
+// kafka
+variable "kafka_lxcid" {
+  type    = number
+  default = 502
+}
+
+variable "kafka_mac" {
+  type    = string
+  default = "3C:04:E2:CB:DB:48"
+}
+
+variable "kafka_ip" {
+  type    = string
+  default = "10.0.5.1/16"
+}

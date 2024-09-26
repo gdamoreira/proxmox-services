@@ -1,0 +1,8 @@
+kafka_scala_version: "2.13"
+kafka_offline_installer_version: "3.8.0"
+kafka_unpacked_dir: "kafka_{{ kafka_scala_version }}-{{ kafka_offline_installer_version }}"
+kafka_offline_installer_tar_file: "{{ kafka_unpacked_dir }}.tgz"
+kafka_offline_installer_url: "https://downloads.apache.org/kafka/{{ kafka_offline_installer_version }}/{{ kafka_offline_installer_tar_file }}"
+
+kafka_home_dir: /etc
+kafka_tar_file: "{{ kafka_home_dir }}/{{ kafka_offline_installer_tar_file }}"

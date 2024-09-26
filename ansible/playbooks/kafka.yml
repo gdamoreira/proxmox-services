@@ -1,0 +1,5 @@
+---
+- hosts: kafka
+  roles:
+    # - { role: common, tags: all }
+    - { role: kafka, tags: kafka }
