@@ -4,6 +4,7 @@ http:
     plex-router:
       rule: Host(`plex.damoreira.ml`)
       service: plex
+      tls: {}
   services:
     plex:
       loadBalancer:

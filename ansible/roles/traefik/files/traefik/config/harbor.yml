@@ -4,6 +4,7 @@ http:
     harbor-router:
       rule: Host(`harbor.damoreira.ml`)
       service: harbor
+      tls: {}
   services:
     harbor:
       loadBalancer:
