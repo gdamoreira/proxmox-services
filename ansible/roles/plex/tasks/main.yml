@@ -13,6 +13,7 @@
       - apt-transport-https
       - ca-certificates
       - curl
+      - unzip
       - software-properties-common
       - python3-pip
       - python3-setuptools
@@ -68,6 +69,67 @@
     - homepage
     - uptime-kuma
     - dozzle
+    - shinkro
+
+- name: Create Plex Plug-ins directory
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Plug-ins"
+    state: directory
+    mode: "0755"
+
+- name: Create Plex Scanners directory
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Scanners/Series"
+    state: directory
+    mode: "0755"
+
+- name: Install HamaTV agent bundle
+  ansible.builtin.unarchive:
+    src: https://github.com/ZeroQI/Hama.bundle/archive/master.zip
+    dest: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Plug-ins"
+    remote_src: true
+  notify: Restart Media Stack
+
+- name: Rename Hama.bundle directory
+  ansible.builtin.shell:
+    cmd: mv "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Plug-ins/Hama.bundle-master" "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Plug-ins/Hama.bundle"
+    creates: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Plug-ins/Hama.bundle"
+
+- name: Install Absolute Series Scanner
+  ansible.builtin.unarchive:
+    src: https://github.com/ZeroQI/Absolute-Series-Scanner/archive/master.zip
+    dest: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Scanners/Series"
+    remote_src: true
+  notify: Restart Media Stack
+
+- name: Rename Absolute Series Scanner directory
+  ansible.builtin.shell:
+    cmd: mv "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Scanners/Series/Absolute-Series-Scanner-master" "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Scanners/Series/Absolute Series Scanner.bundle"
+    creates: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Scanners/Series/Absolute Series Scanner.bundle"
+
+- name: Remove misplaced Absolute Series Scanner from Plug-ins
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Plug-ins/{{ item }}"
+    state: absent
+  loop:
+    - Absolute Series Scanner.bundle
+    - Absolute-Series-Scanner-master
+
+- name: Clean up leftover -master directories
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server/Plug-ins/{{ item }}"
+    state: absent
+  loop:
+    - Hama.bundle-master
+
+- name: Fix ownership of Plex plugins and scanners
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}/config/plex/Library/Application Support/Plex Media Server"
+    state: directory
+    owner: "1000"
+    group: "1000"
+    recurse: true
+  notify: Restart Media Stack
 
 - name: Install CIFS utils
   ansible.builtin.apt:

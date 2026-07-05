@@ -50,6 +50,58 @@ Traefik acts as the ingress layer, routing to services on the private network vi
 
 The following tables describe the complete intended service topology for the infrastructure. Services marked with `✅` are already provisioned on the specified hypervisor.
 
+## Cloudflare Tunnel
+
+A token-based Cloudflare Tunnel runs on `10.0.0.7` (LXC "cf", managed via systemd with `cloudflared tunnel run --token`). The tunnel ingress config is managed entirely through the **Cloudflare Zero Trust Dashboard** (not a local config file).
+
+### ingress rules
+
+All services route to Traefik at `10.0.0.8` with `noTLSVerify: true`. The tunnel was originally pointed at `10.0.1.1` (a retired server); during the July 2026 tunnel migration, all rules were updated to target `10.0.0.8` instead.
+
+| Hostname | Service | Notes |
+|----------|---------|-------|
+| `notes.damoreira.ml` | `https://10.0.0.8` | formerly `http://10.0.0.10:7080` |
+| `ifrit.damoreira.ml` | `https://10.0.0.8` | |
+| `gitlab.damoreira.ml` | `https://10.0.0.8` | |
+| `nexus.damoreira.ml` | `https://10.0.0.8` | |
+| `harbor.damoreira.ml` | `https://10.0.0.8` | |
+| `idrac.damoreira.ml` | `http_status:404` | intentionally blocked |
+| `next.damoreira.ml` | `https://10.0.0.8` | |
+| `plex.damoreira.ml` | `https://10.0.0.8` | was missing `noTLSVerify` (fixed July 2026) |
+| `sso.damoreira.ml` | `https://10.0.0.8` | |
+| `teamcity.damoreira.ml` | `https://10.0.0.8` | |
+| `torrent.damoreira.ml` | `https://10.0.0.8` | |
+| `pve.damoreira.ml` | `https://10.0.0.8` | |
+| `gitlab-ssh.damoreira.ml` | `ssh://10.0.0.66:22` | SSH, not HTTPS |
+| `mangareader.damoreira.ml` | `https://10.0.0.8` | |
+| `traefik.damoreira.ml` | `https://10.0.0.8` | |
+| `virtus.damoreira.ml` | `https://10.0.0.8` | |
+| `alfred.damoreira.ml` | `https://10.0.0.8` | |
+| `coder.damoreira.ml` | `https://10.0.0.8` | |
+| catch-all | `http_status:404` | |
+
+### noTLSVerify requirement
+
+Every HTTPS ingress rule targeting `10.0.0.8` must set `noTLSVerify: true`. The tunnel connects to Traefik by IP, but Let's Encrypt certificates are issued for domain names — the certificate will **never** match the IP, so TLS verification must be skipped. If omitted, cloudflared logs:
+
+```
+tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.8 because it doesn't contain any IP SANs
+```
+
+### How to update
+
+1. Go to https://one.dash.cloudflare.com/ → Access → Tunnels
+2. Find the tunnel (token-based) — it may appear as "Quick Tunnel" or unnamed
+3. Click "Configure" or edit the ingress rule for the hostname
+4. Under `originRequest`, set `noTLSVerify: true`
+5. The tunnel picks up changes automatically (new config version logged)
+
+### Key details
+
+- **Tunnel UUID**: `fd773a47-6b88-4b6b-954b-7a2804d02f09`
+- **Account ID**: `f35d4be77ba9baaf6e235e1a0d90b3b1`
+- **Config versions**: v48 fixed plex `noTLSVerify`, v49 fixed gitlab, v50-56 migrated all services from `10.0.1.1` → `10.0.0.8`
+
 ### 🔐 Essential Services
 
 | Status | Service | Hostname | IP | Description | Subdomain | Location |

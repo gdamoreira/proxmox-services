@@ -56,3 +56,13 @@
     mode: "0644"
   notify:
     - Start Traefik
+
+- name: Fix ownership of Traefik config directory
+  ansible.builtin.file:
+    path: /etc/traefik
+    state: directory
+    owner: traefik
+    group: traefik
+    recurse: true
+  notify:
+    - Restart Traefik

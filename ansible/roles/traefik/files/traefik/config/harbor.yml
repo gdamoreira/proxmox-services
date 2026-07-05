@@ -4,7 +4,8 @@ http:
     harbor-router:
       rule: Host(`harbor.damoreira.ml`)
       service: harbor
-      tls: {}
+      tls:
+        certResolver: letsencrypt
   services:
     harbor:
       loadBalancer:

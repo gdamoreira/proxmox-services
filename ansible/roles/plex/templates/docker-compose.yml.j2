@@ -21,12 +21,10 @@ services:
       - TZ=${TZ}
       - VERSION=docker
       - PLEX_CLAIM=${PLEX_CLAIM}
+      - ADVERTISE_IP=https://plex.damoreira.ml:443
     volumes:
       - ${CONFIG_DIR}/plex:/config
-      - ${MEDIA_DIR}/Movies:/movies
-      - ${MEDIA_DIR}/TV:/tv
-      - ${MEDIA_DIR}/Music:/music
-      - ${MEDIA_DIR}/Downloads:/downloads
+      - ${MEDIA_DIR}:${MEDIA_DIR}
 
   tautulli:
     <<: *security
@@ -176,6 +174,20 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_DIR}/kometa:/config
+    networks:
+      - media
+
+  shinkro:
+    <<: *security
+    image: ghcr.io/shinkro/shinkro:latest
+    container_name: shinkro
+    restart: unless-stopped
+    ports:
+      - 7011:7011
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_DIR}/shinkro:/config
     networks:
       - media
 

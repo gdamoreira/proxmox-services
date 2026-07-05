@@ -109,6 +109,20 @@ Before first run, obtain a Plex claim token:
 ansible-playbook ./playbooks/plex.yml -e plex_claim_token=claim-xxxx
 ```
 
+## Cloudflare Tunnel
+
+All external traffic enters through a Cloudflare Tunnel running on `10.0.0.7` (token-based). The tunnel forwards `https://<hostname>.damoreira.ml` to Traefik at `10.0.0.8:443`.
+
+**Important: every ingress rule targeting Traefik by IP must set `noTLSVerify: true`.**
+
+Since the tunnel connects to Traefik via its IP (`10.0.0.8`) rather than the domain name, the Let's Encrypt certificate (issued for `*.damoreira.ml`) will not match. Without `noTLSVerify`, cloudflared rejects the connection with:
+
+```
+tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.8 because it doesn't contain any IP SANs
+```
+
+This is configured per-hostname in the **Cloudflare Zero Trust Dashboard** → Access → Tunnels → tunnel → Edit ingress rule → `noTLSVerify: true`.
+
 ## SSL / Certificates
 
 Wildcard certificate for `*.damoreira.ml` via ACME DNS with Let's Encrypt.
