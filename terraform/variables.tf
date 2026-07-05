@@ -1,13 +1,13 @@
 variable "proxmox_api_url" {
   description = "The Proxmox API URL"
   type        = string
-  default     = "https://10.0.0.6:8006/api2/json"
+  default     = "https://10.0.30.1:8006/api2/json"
 }
 
 variable "proxmox_instance" {
   description = "The Proxmox Instance name"
   type        = string
-  default     = "virtus"
+  default     = "pve"
 }
 
 variable "proxmox_user" {
@@ -51,7 +51,7 @@ variable "traefik_mac" {
 
 variable "traefik_ip" {
   type    = string
-  default = "10.0.1.1/16"
+  default = "10.0.30.4/16"
 }
 
 // harbor
@@ -82,6 +82,22 @@ variable "kafka_mac" {
 }
 
 variable "kafka_ip" {
+  type    = string
+  default = "10.0.20.11/16"
+}
+
+// plex
+variable "plex_lxcid" {
+  type    = number
+  default = 503
+}
+
+variable "plex_mac" {
+  type    = string
+  default = "BA:7A:1E:D5:90:12"
+}
+
+variable "plex_ip" {
   type    = string
   default = "10.0.5.1/16"
 }

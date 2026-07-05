@@ -1,0 +1,102 @@
+---
+- name: Include config vars
+  ansible.builtin.include_vars: "vars/default.yml"
+
+- name: Upgrade dependencies
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: full
+
+- name: Install required system packages
+  ansible.builtin.apt:
+    pkg:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+      - python3-pip
+      - python3-setuptools
+      - python3-venv
+    state: latest
+
+- name: Add Docker GPG key
+  ansible.builtin.apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Install Docker packages
+  ansible.builtin.apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: latest
+    update_cache: true
+
+- name: Install Docker SDK for Python
+  ansible.builtin.pip:
+    name: docker
+
+- name: Create media stack directory
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: Create config subdirectories
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}/config/{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - plex
+    - tautulli
+    - kometa
+    - overseerr
+    - radarr
+    - sonarr
+    - bazarr
+    - prowlarr
+    - qbittorrent
+    - tdarr
+    - homepage
+    - uptime-kuma
+    - dozzle
+
+- name: Create media directory
+  ansible.builtin.file:
+    path: "{{ media_stack_dir }}/media"
+    state: directory
+    mode: "0755"
+
+- name: Deploy .env file
+  ansible.builtin.template:
+    src: ".env.j2"
+    dest: "{{ media_stack_dir }}/.env"
+    mode: "0644"
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: "docker-compose.yml.j2"
+    dest: "{{ media_stack_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Deploy Kometa config
+  ansible.builtin.template:
+    src: "kometa/config.yml.j2"
+    dest: "{{ media_stack_dir }}/config/kometa/config.yml"
+    mode: "0644"
+
+- name: Start media stack
+  community.docker.docker_compose_v2:
+    project_src: "{{ media_stack_dir }}"
+    state: present
+    pull: always
+  notify:
+    - Restart Media Stack

@@ -1,0 +1,11 @@
+libraries:
+  Movies:
+    metadata_path:
+      - pmm: basic
+    overlay_path:
+      - pmm: resolution
+      - pmm: ribbon
+
+plex:
+  url: {{ kometa_plex_url | default("http://plex:32400") }}
+  token: {{ kometa_plex_token }}

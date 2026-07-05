@@ -1,0 +1,7 @@
+media_stack_dir: "/srv/media-stack"
+media_dir: "/mnt/storage"
+timezone: "Europe/Madrid"
+docker_user: "root"
+docker_group: "root"
+plex_claim_token: ""
+kometa_plex_token: ""
