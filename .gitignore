@@ -1,0 +1,6 @@
+.DS_Store
+*.log
+*.tfstate
+*.tfstate.*
+terraform/*.tfstate
+terraform/*.tfstate.*
