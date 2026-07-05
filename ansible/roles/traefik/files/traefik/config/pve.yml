@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    pve-router:
+      rule: Host(`pve.damoreira.ml`)
+      service: pve
+  services:
+    pve:
+      loadBalancer:
+        servers:
+        - url: https://10.0.30.1:8006

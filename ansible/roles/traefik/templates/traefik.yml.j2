@@ -30,3 +30,9 @@ log:
 
 accessLog:
   filePath: "/etc/traefik/log/access.log"
+
+experimental:
+  plugins:
+    traefik-plugin:
+      moduleName: "github.com/jlfxt/traefik-plugin"
+      version: "v0.1.3"

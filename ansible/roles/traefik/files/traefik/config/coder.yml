@@ -1,0 +1,11 @@
+---
+http:
+  routers:
+    coder-router:
+      rule: Host(`coder.damoreira.ml`)
+      service: coder
+  services:
+    coder:
+      loadBalancer:
+        servers:
+        - url: http://10.0.10.2:8080

@@ -8,4 +8,4 @@ http:
     suwayomi:
       loadBalancer:
         servers:
-        - url: http://10.0.0.10:4567
+        - url: http://10.0.5.2:4567

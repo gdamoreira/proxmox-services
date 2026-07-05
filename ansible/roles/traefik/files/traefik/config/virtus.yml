@@ -2,10 +2,10 @@
 http:
   routers:
     virtus-router:
-      rule: Host(`pve.damoreira.ml`)
+      rule: Host(`virtus.damoreira.ml`)
       service: virtus
   services:
     virtus:
       loadBalancer:
         servers:
-        - url: https://10.0.0.6:8006
+        - url: https://10.0.0.2:8006

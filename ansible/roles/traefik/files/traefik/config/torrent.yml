@@ -8,4 +8,4 @@ http:
     torrent:
       loadBalancer:
         servers:
-        - url: http://10.0.0.20:9091/
+        - url: http://10.0.5.3:9091/
