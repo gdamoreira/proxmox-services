@@ -11,8 +11,8 @@ Currently deployed services:
 
 | Service | IP | LXC ID | Purpose |
 |---------|-----|--------|---------|
-| Traefik | 10.0.30.4/16 | 500 | Reverse proxy / TLS termination / API gateway |
-| Harbor | 10.0.0.8/16 | 501 | Private container image registry + vulnerability scanner |
+| Traefik | 10.0.0.8/16 | 500 | Reverse proxy / TLS termination / API gateway |
+| Harbor | 10.0.20.4/16 | 501 | Private container image registry + vulnerability scanner |
 | Plex | 10.0.5.1/16 | 503 | Media server |
 | Kafka | 10.0.20.11/16 | 502 | Event streaming / message broker |
 
@@ -84,7 +84,7 @@ The following tables describe the complete intended service topology for the inf
 | | Docker | docker | 10.0.20.1 | Host de containers | `docker.damoreira.ml` | |
 | | Heimdall | heimdall | 10.0.20.2 | Dashboard de aplicações | `apps.damoreira.ml` | |
 | | GitLab | gitlab | 10.0.20.3 | Plataforma DevOps completa | `gitlab.damoreira.ml` | |
-| | Harbor | harbor | 10.0.20.4 | Registro de containers | `harbor.damoreira.ml` | |
+| ✅ | Harbor | harbor | 10.0.20.4 | Registro de containers | `harbor.damoreira.ml` | |
 | | Nexus | nexus | 10.0.20.5 | Gerenciador de artefatos | `nexus.damoreira.ml` | |
 | | TeamCity | teamcity | 10.0.20.6 | Integração contínua | `ci.damoreira.ml` | |
 | | Trillium | trillium | 10.0.20.7 | Notes / Personal Wiki | `notes.damoreira.ml` | |

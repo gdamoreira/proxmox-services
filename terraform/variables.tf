@@ -51,7 +51,7 @@ variable "traefik_mac" {
 
 variable "traefik_ip" {
   type    = string
-  default = "10.0.30.4/16"
+  default = "10.0.0.8/16"
 }
 
 // harbor
@@ -67,7 +67,7 @@ variable "harbor_mac" {
 
 variable "harbor_ip" {
   type    = string
-  default = "10.0.0.8/16"
+  default = "10.0.20.4/16"
 }
 
 // kafka
