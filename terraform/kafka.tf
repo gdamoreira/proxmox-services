@@ -1,9 +1,10 @@
 resource "proxmox_lxc" "kafka" {
-  target_node     = var.proxmox_instance
+  provider        = proxmox.secondary
+  target_node     = var.proxmox_secondary_instance
   hostname        = "kafka"
   cores           = 4
   memory          = 8192
-  ostemplate      = "storage:vztmpl/almalinux-9-sshd-enabled_20221108_amd64.tar.gz"
+  ostemplate      = "local:vztmpl/almalinux-9-default_20240911_amd64.tar.xz"
   unprivileged    = true
   ostype          = "centos"
   ssh_public_keys = file(var.pub_ssh_key)

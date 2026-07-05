@@ -8,4 +8,4 @@ http:
     plex:
       loadBalancer:
         servers:
-        - url: http://10.0.0.10:32400/
+        - url: http://10.0.5.1:32400/

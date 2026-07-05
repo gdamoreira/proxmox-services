@@ -1,27 +1,117 @@
-# Proxmox services
+# Proxmox Services
 
-Terraform/Ansible scripts to setup self-hosted services on Proxmox
+Terraform + Ansible pipeline to provision and configure self-hosted services on Proxmox VE.
+
+## Architecture
+
+Two-phase deployment:
+
+1. **Terraform** — creates LXC containers on Proxmox with static IPs, SSH keys, and resource limits
+2. **Ansible** — configures each container (packages, configs, services)
+
+### Services
+
+| Service | IP | LXC ID | Provisioned | Purpose |
+|---------|----|--------|-------------|---------|
+| Traefik | 10.0.0.8/16 | 500 | ✅ | Reverse proxy / TLS termination |
+| Harbor | 10.0.20.4/16 | 501 | ✅ | Private container registry |
+| Kafka | 10.0.20.11/16 | 502 | ✅ | Event streaming |
+| Plex | 10.0.5.1/16 | 503 | ✅ | Media server + Docker stack |
+
+### Full Topology
+
+| IP | Hostname | Service | Location |
+|----|----------|---------|----------|
+| 10.0.0.3 | pihole | Pi-hole | |
+| 10.0.0.4 | idrac | iDRAC (Dell R820 mgmt) | Hypervisor 1 |
+| 10.0.0.5 | sso | Keycloak | |
+| 10.0.0.6 | alfred | Home Assistant | Hypervisor 3 |
+| 10.0.0.7 | cf | Cloudflare Tunnel | Hypervisor 2 |
+| 10.0.0.8 | traefik | Traefik | Hypervisor 2 |
+| 10.0.0.9 | kuma | Uptime Kuma | Hypervisor 2 |
+| 10.0.5.1 | plex | Plex + Media Stack | |
+| 10.0.5.2 | mangareader | Suwayomi | Hypervisor 2 |
+| 10.0.5.3 | torrent | Transmission | Hypervisor 1 |
+| 10.0.10.1 | codex | Synology NAS | Synology NAS |
+| 10.0.10.2 | coder | Coder IDE | Hypervisor 1 |
+| 10.0.20.1 | docker | Docker host | |
+| 10.0.20.2 | heimdall | Heimdall dashboard | |
+| 10.0.20.3 | gitlab | GitLab | |
+| 10.0.20.4 | harbor | Harbor | |
+| 10.0.20.5 | nexus | Nexus | |
+| 10.0.20.6 | teamcity | TeamCity | |
+| 10.0.20.7 | trillium | Trillium Notes | |
+| 10.0.20.8 | mongo | MongoDB | |
+| 10.0.20.9 | postgres | PostgreSQL | |
+| 10.0.20.10 | redis | Redis | |
+| 10.0.20.11 | kafka | Kafka | |
+| 10.0.20.12 | axon | Axon Server | |
+
+## Terraform
+
+Provision LXC containers on Proxmox.
 
 ```bash
-./terraform/
-
+cd terraform
 terraform init
-
 terraform apply
+```
 
+Destroy a specific container:
+
+```bash
 terraform destroy -target=proxmox_lxc.traefik
 ```
 
-```bash
-./ansible/
+## Ansible
 
+Configure services after provisioning.
+
+```bash
+cd ansible
 ansible-playbook ./playbooks/traefik.yml
+ansible-playbook ./playbooks/harbor.yml
+ansible-playbook ./playbooks/kafka.yml
+ansible-playbook ./playbooks/plex.yml
 ```
+
+Or run all:
 
 ```bash
-ssh-keygen -R "traefik.test"; ssh-keygen -R "10.0.1.1"
+ansible-playbook site.yml
 ```
 
+## Plex Media Stack
+
+The Plex LXC runs a full Docker Compose media stack managed via Ansible:
+
+- **Plex** — media server (host networking)
+- **Tautulli** — monitoring & analytics
+- **Sonarr / Radarr** — TV & movie automation
+- **Bazarr** — subtitle management
+- **Prowlarr** — centralized indexers
+- **qBittorrent** — download client
+- **Tdarr** — media optimization
+- **Overseerr** — media requests
+- **Kometa** — collections & overlays
+- **Watchtower** — automatic container updates
+- **Homepage** — service dashboard
+- **Uptime Kuma** — health monitoring
+- **Dozzle** — Docker log viewer
+
+Stack deployed to `/srv/media-stack/` on the Plex LXC. Media expected at `/mnt/storage/`.
+
+### Claim Token
+
+Before first run, obtain a Plex claim token:
+
+```bash
+ansible-playbook ./playbooks/plex.yml -e plex_claim_token=claim-xxxx
+```
+
+## SSL / Certificates
+
+Wildcard certificate for `*.damoreira.ml` via ACME DNS with Let's Encrypt.
 
 ```bash
 apt install certbot
@@ -40,13 +130,45 @@ _OUT=~/traefik_key
 cat $_IN | base64 | tr '\n' ' ' | sed --expression='s/\ //g' > $_OUT
 
 echo "Update /etc/traefik/acme.json and add the following certificate:"
-echo "{
-        "domain": {
-          "main": "example.com"
-        },
-        "certificate": "\<certificate\>",
-        "key": "\<key\>",
-        "Store": "default"
-      }"
+echo '{
+  "domain": {
+    "main": "example.com"
+  },
+  "certificate": "<certificate>",
+  "key": "<key>",
+  "Store": "default"
+}'
 ```
 
+## Directory Structure
+
+```
+├── terraform/
+│   ├── versions.tf          # Provider config
+│   ├── providers.tf         # Proxmox connection
+│   ├── variables.tf         # IPs, MACs, LXC IDs
+│   ├── traefik.tf           # Traefik LXC
+│   ├── harbor.tf            # Harbor LXC
+│   ├── kafka.tf             # Kafka LXC
+│   └── plex.tf              # Plex LXC
+│
+├── ansible/
+│   ├── ansible.cfg
+│   ├── production           # Inventory
+│   ├── site.yml             # Master playbook
+│   ├── playbooks/
+│   │   ├── traefik.yml
+│   │   ├── harbor.yml
+│   │   ├── kafka.yml
+│   │   └── plex.yml
+│   ├── roles/
+│   │   ├── common/          # OS upgrades + base packages
+│   │   ├── traefik/         # Traefik binary + config
+│   │   ├── harbor/          # Harbor offline installer
+│   │   ├── kafka/           # Kafka tarball
+│   │   └── plex/            # Docker + Compose media stack
+│   └── host_vars/
+│
+├── AI.md                    # Project intelligence & roadmap
+└── README.md
+```

@@ -1,5 +1,6 @@
 resource "proxmox_lxc" "harbor" {
-  target_node     = var.proxmox_instance
+  provider        = proxmox.secondary
+  target_node     = var.proxmox_secondary_instance
   hostname        = "harbor"
   cores           = 4
   memory          = 8192

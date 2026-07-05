@@ -34,6 +34,30 @@ variable "gateway_ip" {
   default     = "10.0.0.1"
 }
 
+variable "proxmox_secondary_api_url" {
+  description = "The secondary Proxmox API URL"
+  type        = string
+  default     = "https://10.0.0.2:8006/api2/json"
+}
+
+variable "proxmox_secondary_instance" {
+  description = "The secondary Proxmox node name"
+  type        = string
+  default     = "pve"
+}
+
+variable "proxmox_secondary_user" {
+  description = "The secondary Proxmox user"
+  type        = string
+  default     = "root@pam"
+}
+
+variable "proxmox_secondary_password" {
+  description = "The secondary Proxmox user password"
+  type        = string
+  default     = "necro1"
+}
+
 //
 // Services variables
 //

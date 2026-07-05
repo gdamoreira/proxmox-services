@@ -8,4 +8,4 @@ http:
     harbor:
       loadBalancer:
         servers:
-        - url: http://10.0.0.8
+        - url: http://10.0.20.4:80

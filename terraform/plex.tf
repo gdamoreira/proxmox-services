@@ -1,10 +1,11 @@
 resource "proxmox_lxc" "plex" {
-  target_node     = var.proxmox_instance
+  provider        = proxmox.secondary
+  target_node     = var.proxmox_secondary_instance
   hostname        = "plex"
   cores           = 4
   memory          = 8192
   ostemplate      = "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
-  unprivileged    = true
+  unprivileged    = false
   ostype          = "ubuntu"
   ssh_public_keys = file(var.pub_ssh_key)
   start           = true

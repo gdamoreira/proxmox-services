@@ -1,4 +1,9 @@
 ---
+- name: Restart Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+    daemon_reload: true
 - name: Restart Media Stack
   community.docker.docker_compose_v2:
     project_src: "{{ media_stack_dir }}"

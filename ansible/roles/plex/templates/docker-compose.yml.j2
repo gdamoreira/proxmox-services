@@ -1,4 +1,7 @@
 ---
+x-security: &security
+  security_opt:
+    - apparmor=unconfined
 
 networks:
   media:
@@ -7,6 +10,7 @@ networks:
 services:
 
   plex:
+    <<: *security
     image: lscr.io/linuxserver/plex:latest
     container_name: plex
     network_mode: host
@@ -25,6 +29,7 @@ services:
       - ${MEDIA_DIR}/Downloads:/downloads
 
   tautulli:
+    <<: *security
     image: lscr.io/linuxserver/tautulli:latest
     container_name: tautulli
     restart: unless-stopped
@@ -40,6 +45,7 @@ services:
       - media
 
   overseerr:
+    <<: *security
     image: sctx/overseerr:latest
     container_name: overseerr
     restart: unless-stopped
@@ -55,6 +61,7 @@ services:
       - media
 
   radarr:
+    <<: *security
     image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
     restart: unless-stopped
@@ -72,6 +79,7 @@ services:
       - media
 
   sonarr:
+    <<: *security
     image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
     restart: unless-stopped
@@ -89,6 +97,7 @@ services:
       - media
 
   bazarr:
+    <<: *security
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
     restart: unless-stopped
@@ -105,6 +114,7 @@ services:
       - media
 
   prowlarr:
+    <<: *security
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     restart: unless-stopped
@@ -120,6 +130,7 @@ services:
       - media
 
   qbittorrent:
+    <<: *security
     image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     restart: unless-stopped
@@ -138,6 +149,7 @@ services:
       - media
 
   tdarr:
+    <<: *security
     image: ghcr.io/haveagitgat/tdarr:latest
     container_name: tdarr
     restart: unless-stopped
@@ -154,6 +166,7 @@ services:
       - media
 
   kometa:
+    <<: *security
     image: kometateam/kometa:latest
     container_name: kometa
     restart: unless-stopped
@@ -167,6 +180,7 @@ services:
       - media
 
   homepage:
+    <<: *security
     image: ghcr.io/gethomepage/homepage:latest
     container_name: homepage
     restart: unless-stopped
@@ -183,6 +197,7 @@ services:
       - media
 
   uptime-kuma:
+    <<: *security
     image: louislam/uptime-kuma:latest
     container_name: uptime-kuma
     restart: unless-stopped
@@ -194,6 +209,7 @@ services:
       - media
 
   dozzle:
+    <<: *security
     image: amir20/dozzle:latest
     container_name: dozzle
     restart: unless-stopped
@@ -205,6 +221,7 @@ services:
       - media
 
   watchtower:
+    <<: *security
     image: containrrr/watchtower
     container_name: watchtower
     restart: unless-stopped
