@@ -103,7 +103,6 @@
   community.docker.docker_compose_v2:
     project_src: "{{ suwayomi_compose_dir }}"
     state: present
-    pull: always
 
 #
 # CIFS mounts for downloads and backups
