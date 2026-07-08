@@ -2,3 +2,6 @@ suwayomi_data_dir: "/var/suwayomi"
 suwayomi_compose_dir: "/root/suwayomi"
 suwayomi_port: 4567
 timezone: "Etc/UTC"
+suwayomi_cifs_username: "damoreira"
+suwayomi_cifs_password: "S3r3m0s0sr31s.;."
+suwayomi_restore_src: ""

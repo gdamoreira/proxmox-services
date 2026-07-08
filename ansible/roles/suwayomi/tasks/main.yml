@@ -1,6 +1,7 @@
 ---
 - name: Include config vars
   ansible.builtin.include_vars: "vars/default.yml"
+  tags: always
 
 - name: Upgrade dependencies (Debian)
   ansible.builtin.apt:
@@ -95,3 +96,92 @@
     project_src: "{{ suwayomi_compose_dir }}"
     state: present
     pull: always
+
+#
+# CIFS mounts for downloads and backups
+#
+- name: Deploy SMB credentials
+  ansible.builtin.copy:
+    dest: /root/.smbcredentials
+    content: |
+      username={{ suwayomi_cifs_username }}
+      password={{ suwayomi_cifs_password }}
+      domain=WORKGROUP
+    mode: "0600"
+  no_log: true
+  tags: cifs
+
+- name: Create CIFS mount points
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /var/suwayomi/files/backups
+    - /var/suwayomi/downloads/mangas
+  tags: cifs
+
+- name: Mount CIFS shares
+  ansible.builtin.mount:
+    src: "{{ item.src }}"
+    path: "{{ item.path }}"
+    opts: "{{ item.opts }}"
+    fstype: cifs
+    state: mounted
+  loop:
+    - src: "//10.0.10.1/codex/server-backups/suwayomi"
+      path: /var/suwayomi/files/backups
+      opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
+    - src: "//10.0.10.1/codex/media/manga"
+      path: /var/suwayomi/downloads/mangas
+      opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
+  tags: cifs
+
+#
+# MOTD
+#
+- name: Deploy LXC details profile script
+  ansible.builtin.template:
+    src: 00_lxc-details.sh.j2
+    dest: /etc/profile.d/00_lxc-details.sh
+    mode: "0644"
+  tags: motd
+
+#
+# Database restore (run with --tags restore)
+#
+- name: Stop containers for restore
+  community.docker.docker_compose_v2:
+    project_src: "{{ suwayomi_compose_dir }}"
+    state: stopped
+  tags: [restore, never]
+
+- name: Copy backup archive to LXC
+  ansible.builtin.copy:
+    src: "{{ suwayomi_restore_src }}"
+    dest: /tmp/suwayomi-restore.tar.gz
+    mode: "0644"
+  when: suwayomi_restore_src | length > 0
+  tags: [restore, never]
+
+- name: Extract database and config from backup
+  ansible.builtin.unarchive:
+    src: /tmp/suwayomi-restore.tar.gz
+    dest: /var/suwayomi/files
+    remote_src: true
+  when: suwayomi_restore_src | length > 0
+  tags: [restore, never]
+
+- name: Fix ownership
+  ansible.builtin.file:
+    path: /var/suwayomi/files
+    owner: root
+    group: root
+    recurse: true
+  tags: [restore, never]
+
+- name: Start containers after restore
+  community.docker.docker_compose_v2:
+    project_src: "{{ suwayomi_compose_dir }}"
+    state: present
+  tags: [restore, never]
