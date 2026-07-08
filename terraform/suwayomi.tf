@@ -10,6 +10,7 @@ resource "proxmox_lxc" "suwayomi" {
   onboot          = true
   vmid            = var.suwayomi_lxcid
   unprivileged    = false
+  tags            = "debian;docker;manga;media;suwayomi"
 
   features {
     nesting = true
@@ -34,7 +35,6 @@ resource "proxmox_lxc" "suwayomi" {
     ignore_changes = [
       ostemplate,
       description,
-      tags,
       cmode,
       mountpoint[0].storage,
     ]
