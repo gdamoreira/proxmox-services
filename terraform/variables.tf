@@ -145,17 +145,17 @@ variable "kuma_ip" {
 // suwayomi
 variable "suwayomi_lxcid" {
   type    = number
-  default = 101
+  default = 103
 }
 
 variable "suwayomi_mac" {
   type    = string
-  default = "BC:24:11:89:3B:86"
+  default = "BC:24:11:F2:3D:D4"
 }
 
 variable "suwayomi_ip" {
   type    = string
-  default = "10.0.5.2/16"
+  default = "10.0.5.4/16"
 }
 
 // coder

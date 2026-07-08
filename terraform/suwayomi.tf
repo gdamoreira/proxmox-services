@@ -3,17 +3,18 @@ resource "proxmox_lxc" "suwayomi" {
   hostname        = "suwayomi"
   cores           = 2
   memory          = 4096
-  ostype          = "alpine"
+  ostype          = "debian"
   swap            = 1024
-  ostemplate      = "local:vztmpl/alpine-3.19-default_20240101_amd64.tar.zst"
+  ostemplate      = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
   start           = true
   onboot          = true
   vmid            = var.suwayomi_lxcid
+  unprivileged    = false
 
   features {
     nesting = true
-    keyctl = true
-    fuse   = true
+    keyctl  = true
+    fuse    = true
   }
 
   rootfs {
