@@ -1,0 +1,39 @@
+---
+- hosts: kuma
+  vars_files:
+    - "../roles/backup/vars/default.yml"
+  tasks:
+    - name: Install smbclient
+      ansible.builtin.package:
+        name: smbclient
+        state: present
+
+    - name: Deploy backup script
+      ansible.builtin.template:
+        src: "../roles/backup/templates/backup-kuma.sh.j2"
+        dest: "/usr/local/bin/backup-kuma.sh"
+        mode: "0700"
+
+    - name: Deploy systemd service
+      ansible.builtin.template:
+        src: "../roles/backup/templates/backup.service.j2"
+        dest: "/etc/systemd/system/backup-kuma.service"
+        mode: "0644"
+      vars:
+        backup_service_name: kuma
+
+    - name: Deploy systemd timer
+      ansible.builtin.template:
+        src: "../roles/backup/templates/backup.timer.j2"
+        dest: "/etc/systemd/system/backup-kuma.timer"
+        mode: "0644"
+      vars:
+        backup_service_name: kuma
+        backup_timer_calendar: "Mon *-*-* 03:00:00"
+
+    - name: Enable and start backup timer
+      ansible.builtin.systemd:
+        name: "backup-kuma.timer"
+        state: started
+        enabled: yes
+        daemon_reload: yes

@@ -129,12 +129,12 @@ variable "plex_ip" {
 // kuma
 variable "kuma_lxcid" {
   type    = number
-  default = 504
+  default = 200
 }
 
 variable "kuma_mac" {
   type    = string
-  default = "8A:3B:F1:29:47:CE"
+  default = "BC:24:11:A4:A4:C4"
 }
 
 variable "kuma_ip" {
@@ -142,18 +142,18 @@ variable "kuma_ip" {
   default = "10.0.0.9/16"
 }
 
-// mangareader
-variable "mangareader_lxcid" {
+// suwayomi
+variable "suwayomi_lxcid" {
   type    = number
-  default = 505
+  default = 101
 }
 
-variable "mangareader_mac" {
+variable "suwayomi_mac" {
   type    = string
-  default = "7A:2B:E0:18:36:DA"
+  default = "BC:24:11:89:3B:86"
 }
 
-variable "mangareader_ip" {
+variable "suwayomi_ip" {
   type    = string
   default = "10.0.5.2/16"
 }

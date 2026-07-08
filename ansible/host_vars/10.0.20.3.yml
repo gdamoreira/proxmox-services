@@ -1,2 +1,4 @@
 ---
 ansible_python_interpreter: /usr/bin/python3
+gitlab_version: "17.1.8"
+gitlab_root_password: "necro1"

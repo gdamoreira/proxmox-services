@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_DIR="{{ backup_cifs_base }}/kuma"
+DATE=$(date +%Y-%m-%d-%H%M%S)
+TMPDIR=$(mktemp -d)
+
+trap 'rm -rf "$TMPDIR"' EXIT
+
+echo "=== Kuma backup $DATE ==="
+
+echo "Copying database..."
+cp /opt/uptime-kuma/data/kuma.db "$TMPDIR/" 2>/dev/null || true
+cp /opt/uptime-kuma/data/kuma.db-shm "$TMPDIR/" 2>/dev/null || true
+cp /opt/uptime-kuma/data/kuma.db-wal "$TMPDIR/" 2>/dev/null || true
+
+echo "Copying screenshots..."
+cp -r /opt/uptime-kuma/data/screenshots "$TMPDIR/" 2>/dev/null || true
+
+echo "Creating archive..."
+ARCHIVE="/tmp/kuma-backup-$DATE.tar.gz"
+tar czf "$ARCHIVE" -C "$TMPDIR" .
+
+echo "Uploading to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR..."
+smbclient "{{ backup_cifs_server }}/{{ backup_cifs_share }}" \
+  -U "{{ backup_cifs_username }}%{{ backup_cifs_password }}" \
+  -c "cd server-backups; mkdir kuma; cd kuma; put \"$ARCHIVE\" \"kuma-backup-$DATE.tar.gz\"" 2>&1 || true
+
+rm -f "$ARCHIVE"
+
+echo "=== Kuma backup complete === (uploaded to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR/kuma-backup-$DATE.tar.gz)"

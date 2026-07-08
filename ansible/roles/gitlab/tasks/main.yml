@@ -1,6 +1,7 @@
 ---
 - name: Include config vars
   ansible.builtin.include_vars: "vars/default.yml"
+  tags: [always, restore]
 
 - name: Upgrade dependencies
   ansible.builtin.apt:
@@ -10,110 +11,114 @@
 - name: Install required system packages
   ansible.builtin.apt:
     pkg:
-      - apt-transport-https
       - ca-certificates
       - curl
-      - software-properties-common
+      - openssh-server
+      - tzdata
+      - perl
+      - cifs-utils
     state: latest
 
-- name: Add Docker GPG key
-  ansible.builtin.apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
+- name: Download GitLab EE package
+  ansible.builtin.get_url:
+    url: "https://packages.gitlab.com/gitlab/gitlab-ee/packages/ubuntu/jammy/gitlab-ee_{{ gitlab_version }}-ee.0_amd64.deb/download.deb"
+    dest: "/tmp/gitlab-ee.deb"
+    timeout: 120
 
-- name: Add Docker repository
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-    state: present
-
-- name: Install Docker packages
+- name: Install GitLab EE
   ansible.builtin.apt:
-    pkg:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-compose-plugin
-    state: latest
-    update_cache: true
+    deb: "/tmp/gitlab-ee.deb"
+  environment:
+    EXTERNAL_URL: "https://{{ gitlab_hostname }}"
+    GITLAB_ROOT_PASSWORD: "{{ gitlab_root_password }}"
 
-- name: Install Docker SDK for Python
-  ansible.builtin.pip:
-    name: docker
-
-- name: Create gitlab data directories
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    mode: "0755"
+- name: Configure gitlab.rb
+  ansible.builtin.lineinfile:
+    path: /etc/gitlab/gitlab.rb
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
   loop:
-    - "{{ gitlab_data_dir }}"
-    - "{{ gitlab_data_dir }}/config"
-    - "{{ gitlab_data_dir }}/logs"
-    - "{{ gitlab_data_dir }}/data"
-    - "{{ gitlab_data_dir }}/data/backups"
+    - regexp: "^#?\\s*external_url\\b"
+      line: "external_url 'https://{{ gitlab_hostname }}'"
+    - regexp: "^#?\\s*gitlab_rails\\['gitlab_shell_ssh_port'\\]"
+      line: "gitlab_rails['gitlab_shell_ssh_port'] = {{ gitlab_ssh_port }}"
+    - regexp: "^#?\\s*nginx\\['listen_port'\\]"
+      line: "nginx['listen_port'] = 80"
+    - regexp: "^#?\\s*nginx\\['listen_https'\\]"
+      line: "nginx['listen_https'] = false"
+    - regexp: "^#?\\s*nginx\\['redirect_http_to_https'\\]"
+      line: "nginx['redirect_http_to_https'] = false"
+    - regexp: "^#?\\s*nginx\\['proxy_set_headers'\\]"
+      line: "nginx['proxy_set_headers'] = { \"X-Forwarded-Proto\" => \"https\", \"X-Forwarded-Ssl\" => \"on\" }"
+    - regexp: "^#?\\s*gitlab_sshd\\['enable'\\]"
+      line: "gitlab_sshd['enable'] = true"
+    - regexp: "^#?\\s*gitlab_sshd\\['listen_address'\\]"
+      line: "gitlab_sshd['listen_address'] = \"0.0.0.0:{{ gitlab_ssh_port }}\""
 
-- name: Deploy docker-compose.yml
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: "{{ gitlab_data_dir }}/docker-compose.yml"
-    mode: "0644"
+- name: Grant gitlab-sshd CAP_NET_BIND_SERVICE for privileged port
+  ansible.builtin.command:
+    cmd: "setcap cap_net_bind_service=+ep /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-sshd"
+    changed_when: false
+  when: gitlab_ssh_port | int < 1024
 
-- name: Ensure gitlab is running
-  community.docker.docker_compose_v2:
-    project_src: "{{ gitlab_data_dir }}"
-    state: present
-    pull: always
+- name: Reconfigure GitLab
+  ansible.builtin.command:
+    cmd: gitlab-ctl reconfigure
+    creates: /var/opt/gitlab/bootstrapped
+
+- name: Wait for GitLab to be ready
+  ansible.builtin.uri:
+    url: "http://localhost/users/sign_in"
+    status_code: 200
+  register: gitlab_web
+  retries: 30
+  delay: 10
+  until: gitlab_web.status == 200
 
 #
 # Restore tasks (run with --tags restore)
 #
-- name: Stop gitlab container for restore
-  community.docker.docker_compose_v2:
-    project_src: "{{ gitlab_data_dir }}"
-    state: stopped
+- name: Stop gitlab services for restore
+  ansible.builtin.command:
+    cmd: gitlab-ctl stop unicorn && gitlab-ctl stop sidekiq
+  ignore_errors: true
   tags: [restore, never]
 
-- name: Copy backup tar to data dir
-  ansible.builtin.copy:
-    src: "{{ gitlab_backup_src }}"
-    dest: "{{ gitlab_data_dir }}/data/backups/"
-    mode: "0644"
-  when: gitlab_backup_src | length > 0
+- name: Download backup tar from CIFS share via smbclient
+  ansible.builtin.shell:
+    cmd: >
+      smbclient "//{{ cifs_server }}/{{ cifs_share }}"
+      -U "{{ cifs_username }}%{{ cifs_password }}"
+      -c 'cd {{ gitlab_backup_path }}; get {{ gitlab_backup_file }} /var/opt/gitlab/backups/{{ gitlab_backup_file }}'
+    creates: "/var/opt/gitlab/backups/{{ gitlab_backup_file }}"
   tags: [restore, never]
 
-- name: Copy gitlab-secrets.json to config dir
-  ansible.builtin.copy:
-    src: "files/gitlab-secrets.json.reference"
-    dest: "{{ gitlab_data_dir }}/config/gitlab-secrets.json"
-    mode: "0600"
+- name: Download config backup from CIFS share via smbclient
+  ansible.builtin.shell:
+    cmd: >
+      smbclient "//{{ cifs_server }}/{{ cifs_share }}"
+      -U "{{ cifs_username }}%{{ cifs_password }}"
+      -c 'cd {{ gitlab_config_path }}; get {{ gitlab_config_backup_file }} /tmp/gitlab_config_backup.tar'
+    creates: "/tmp/gitlab_config_backup.tar"
   tags: [restore, never]
 
-- name: Start gitlab for restore
-  community.docker.docker_compose_v2:
-    project_src: "{{ gitlab_data_dir }}"
-    state: present
-  tags: [restore, never]
-
-- name: Wait for gitlab to be ready
-  ansible.builtin.pause:
-    seconds: 30
+- name: Extract gitlab-secrets.json from config backup
+  ansible.builtin.command:
+    cmd: "tar -xf /tmp/gitlab_config_backup.tar -C /etc/gitlab/ --strip-components=2 ./etc/gitlab/gitlab-secrets.json"
+    creates: "/etc/gitlab/gitlab-secrets.json"
   tags: [restore, never]
 
 - name: Restore gitlab from backup
-  ansible.builtin.command:
-    cmd: "docker compose exec -T gitlab gitlab-backup restore BACKUP={{ gitlab_backup_timestamp }} force=yes"
-    chdir: "{{ gitlab_data_dir }}"
-  when: gitlab_backup_timestamp | length > 0
+  ansible.builtin.shell:
+    cmd: "gitlab-backup restore BACKUP={{ gitlab_backup_file | regex_replace('_gitlab_backup\\.tar$', '') }} force=yes"
   tags: [restore, never]
 
 - name: Reconfigure gitlab after restore
   ansible.builtin.command:
-    cmd: "docker compose exec -T gitlab gitlab-ctl reconfigure"
-    chdir: "{{ gitlab_data_dir }}"
+    cmd: gitlab-ctl reconfigure
   tags: [restore, never]
 
-- name: Restart gitlab after restore
-  community.docker.docker_compose_v2:
-    project_src: "{{ gitlab_data_dir }}"
-    state: restarted
+- name: Restart gitlab services
+  ansible.builtin.command:
+    cmd: gitlab-ctl restart
   tags: [restore, never]

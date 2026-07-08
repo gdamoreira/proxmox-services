@@ -1,16 +1,20 @@
 resource "proxmox_lxc" "kuma" {
   target_node     = var.proxmox_instance
   hostname        = "kuma"
-  ostemplate      = "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
+  cores           = 1
+  memory          = 256
+  ostype          = "debian"
+  swap            = 512
   unprivileged    = true
-  ostype          = "ubuntu"
-  ssh_public_keys = file(var.pub_ssh_key)
+  ostemplate      = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
   start           = true
   onboot          = true
   vmid            = var.kuma_lxcid
 
   features {
     nesting = true
+    keyctl  = true
+    fuse    = true
   }
 
   rootfs {
@@ -23,13 +27,16 @@ resource "proxmox_lxc" "kuma" {
     bridge = "vmbr0"
     gw     = var.gateway_ip
     ip     = var.kuma_ip
-    ip6    = "auto"
     hwaddr = var.kuma_mac
   }
 
   lifecycle {
     ignore_changes = [
-      mountpoint[0].storage
+      ostemplate,
+      description,
+      tags,
+      cmode,
+      mountpoint[0].storage,
     ]
   }
 }

@@ -1,9 +1,17 @@
-gitlab_data_dir: "/srv/gitlab"
+gitlab_version: "17.1.8"
 gitlab_hostname: "gitlab.damoreira.ml"
-gitlab_port: 80
-gitlab_ssh_port: 2222
-gitlab_image: "gitlab/gitlab-ee:17.1.8-ee.0"
+gitlab_ssh_port: 22
 gitlab_root_password: "necro1"
-gitlab_backup_timestamp: ""
-gitlab_backup_src: ""
+gitlab_backup_timestamp: "1745820060"
+gitlab_backup_file: "1745820060_2025_04_28_17.1.8-ee_gitlab_backup.tar"
+gitlab_config_backup_file: "gitlab_config_1745820079_2025_04_28.tar"
 timezone: "Europe/Madrid"
+
+## CIFS backup share
+cifs_server: "10.0.10.1"
+cifs_share: "storage"
+cifs_username: "damoreira"
+cifs_password: "S3r3m0s0sr31s.;."
+cifs_mount: "/mnt/backups"
+gitlab_backup_path: "gitlab/backups"
+gitlab_config_path: "gitlab/configs"

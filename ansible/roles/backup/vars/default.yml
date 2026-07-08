@@ -1,5 +1,6 @@
 backup_cifs_server: "//10.0.10.1"
-backup_cifs_share: "backup"
+backup_cifs_share: "codex"
+backup_cifs_base: "server-backups"
 backup_cifs_mount: "/mnt/backup"
 backup_cifs_credentials_file: "/etc/samba/credentials/backup"
 backup_cifs_username: "damoreira"
