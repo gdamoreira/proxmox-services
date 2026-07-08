@@ -25,3 +25,4 @@
       ansible.builtin.command:
         cmd: /usr/local/bin/backup-suwayomi.sh
       changed_when: true
+      tags: [backup, never]

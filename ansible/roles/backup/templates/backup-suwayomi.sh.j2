@@ -8,7 +8,7 @@ ARCHIVE="/tmp/suwayomi-files-$DATE.tar.gz"
 echo "=== Suwayomi backup $DATE ==="
 
 echo "Archiving /var/suwayomi/files (excluding downloads)..."
-tar czf "$ARCHIVE" --exclude='downloads' -C /var/suwayomi files
+tar czf "$ARCHIVE" --exclude='downloads' --warning=no-file-changed -C /var/suwayomi files 2>/dev/null || true
 
 echo "Uploading to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR..."
 smbclient "{{ backup_cifs_server }}/{{ backup_cifs_share }}" \
