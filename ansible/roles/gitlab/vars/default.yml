@@ -2,4 +2,8 @@ gitlab_data_dir: "/srv/gitlab"
 gitlab_hostname: "gitlab.damoreira.ml"
 gitlab_port: 80
 gitlab_ssh_port: 2222
+gitlab_image: "gitlab/gitlab-ee:17.1.8-ee.0"
+gitlab_root_password: "necro1"
+gitlab_backup_timestamp: ""
+gitlab_backup_src: ""
 timezone: "Europe/Madrid"

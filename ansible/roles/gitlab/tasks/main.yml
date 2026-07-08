@@ -40,11 +40,17 @@
   ansible.builtin.pip:
     name: docker
 
-- name: Create gitlab data directory
+- name: Create gitlab data directories
   ansible.builtin.file:
-    path: "{{ gitlab_data_dir }}"
+    path: "{{ item }}"
     state: directory
     mode: "0755"
+  loop:
+    - "{{ gitlab_data_dir }}"
+    - "{{ gitlab_data_dir }}/config"
+    - "{{ gitlab_data_dir }}/logs"
+    - "{{ gitlab_data_dir }}/data"
+    - "{{ gitlab_data_dir }}/data/backups"
 
 - name: Deploy docker-compose.yml
   ansible.builtin.template:
@@ -57,3 +63,57 @@
     project_src: "{{ gitlab_data_dir }}"
     state: present
     pull: always
+
+#
+# Restore tasks (run with --tags restore)
+#
+- name: Stop gitlab container for restore
+  community.docker.docker_compose_v2:
+    project_src: "{{ gitlab_data_dir }}"
+    state: stopped
+  tags: [restore, never]
+
+- name: Copy backup tar to data dir
+  ansible.builtin.copy:
+    src: "{{ gitlab_backup_src }}"
+    dest: "{{ gitlab_data_dir }}/data/backups/"
+    mode: "0644"
+  when: gitlab_backup_src | length > 0
+  tags: [restore, never]
+
+- name: Copy gitlab-secrets.json to config dir
+  ansible.builtin.copy:
+    src: "files/gitlab-secrets.json.reference"
+    dest: "{{ gitlab_data_dir }}/config/gitlab-secrets.json"
+    mode: "0600"
+  tags: [restore, never]
+
+- name: Start gitlab for restore
+  community.docker.docker_compose_v2:
+    project_src: "{{ gitlab_data_dir }}"
+    state: present
+  tags: [restore, never]
+
+- name: Wait for gitlab to be ready
+  ansible.builtin.pause:
+    seconds: 30
+  tags: [restore, never]
+
+- name: Restore gitlab from backup
+  ansible.builtin.command:
+    cmd: "docker compose exec -T gitlab gitlab-backup restore BACKUP={{ gitlab_backup_timestamp }} force=yes"
+    chdir: "{{ gitlab_data_dir }}"
+  when: gitlab_backup_timestamp | length > 0
+  tags: [restore, never]
+
+- name: Reconfigure gitlab after restore
+  ansible.builtin.command:
+    cmd: "docker compose exec -T gitlab gitlab-ctl reconfigure"
+    chdir: "{{ gitlab_data_dir }}"
+  tags: [restore, never]
+
+- name: Restart gitlab after restore
+  community.docker.docker_compose_v2:
+    project_src: "{{ gitlab_data_dir }}"
+    state: restarted
+  tags: [restore, never]

@@ -2,8 +2,8 @@ resource "proxmox_lxc" "gitlab" {
   provider        = proxmox.secondary
   target_node     = var.proxmox_secondary_instance
   hostname        = "gitlab"
-  cores           = 4
-  memory          = 4096
+  cores           = 8
+  memory          = 8192
   ostemplate      = "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
   unprivileged    = true
   ostype          = "ubuntu"
@@ -18,7 +18,7 @@ resource "proxmox_lxc" "gitlab" {
 
   rootfs {
     storage = "local-lvm"
-    size    = "30G"
+    size    = "100G"
   }
 
   network {

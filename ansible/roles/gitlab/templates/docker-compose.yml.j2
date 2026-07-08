@@ -1,6 +1,6 @@
 services:
   gitlab:
-    image: gitlab/gitlab-ce:latest
+    image: {{ gitlab_image }}
     container_name: gitlab
     hostname: {{ gitlab_hostname }}
     restart: unless-stopped
@@ -17,4 +17,10 @@ services:
         gitlab_rails['gitlab_shell_ssh_port'] = {{ gitlab_ssh_port }}
         nginx['listen_port'] = 80
         nginx['listen_https'] = false
+        nginx['redirect_http_to_https'] = false
+        nginx['proxy_set_headers'] = {
+          "X-Forwarded-For" => "$proxy_add_x_forwarded_for",
+          "X-Forwarded-Proto" => "https",
+          "X-Forwarded-Ssl" => "on"
+        }
       TZ: {{ timezone }}
