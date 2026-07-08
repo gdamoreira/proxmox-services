@@ -10,7 +10,7 @@ resource "proxmox_lxc" "suwayomi" {
   onboot          = true
   vmid            = var.suwayomi_lxcid
   unprivileged    = false
-  tags            = "debian;docker;manga;media;suwayomi"
+  tags            = "debian;docker;essentials;manga;media;suwayomi"
 
   features {
     nesting = true

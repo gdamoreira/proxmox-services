@@ -10,6 +10,7 @@ resource "proxmox_lxc" "kuma" {
   start           = true
   onboot          = true
   vmid            = var.kuma_lxcid
+  tags            = "debian;essentials;monitoring;native;uptime"
 
   features {
     nesting = true
@@ -34,7 +35,6 @@ resource "proxmox_lxc" "kuma" {
     ignore_changes = [
       ostemplate,
       description,
-      tags,
       cmode,
       mountpoint[0].storage,
     ]

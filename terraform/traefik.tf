@@ -8,6 +8,7 @@ resource "proxmox_lxc" "traefik" {
   start           = true
   onboot          = true
   vmid            = var.traefik_lxcid
+  tags            = "essentials;native;network;routing;ubuntu"
 
   // Terraform will crash without rootfs defined
   rootfs {
