@@ -4,8 +4,8 @@
     - "../roles/backup/vars/default.yml"
   tasks:
     - name: Install smbclient
-      community.general.apk:
-        name: samba-client
+      ansible.builtin.apt:
+        name: smbclient
         state: present
 
     - name: Deploy backup script
@@ -14,10 +14,9 @@
         dest: "/usr/local/bin/backup-suwayomi.sh"
         mode: "0700"
 
-    - name: Install backup cron job
+    - name: Install backup cron job (daily at 03:00)
       ansible.builtin.cron:
         name: backup-suwayomi
         minute: "0"
         hour: "3"
-        weekday: "1"
         job: "/usr/local/bin/backup-suwayomi.sh"
