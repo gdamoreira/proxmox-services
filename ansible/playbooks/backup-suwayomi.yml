@@ -20,3 +20,8 @@
         minute: "0"
         hour: "3"
         job: "/usr/local/bin/backup-suwayomi.sh"
+
+    - name: Run backup immediately
+      ansible.builtin.command:
+        cmd: /usr/local/bin/backup-suwayomi.sh
+      changed_when: true
