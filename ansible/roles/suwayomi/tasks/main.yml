@@ -119,30 +119,35 @@
   no_log: true
   tags: cifs
 
-- name: Create CIFS mount points
+- name: Create CIFS mount point
   ansible.builtin.file:
-    path: "{{ item }}"
+    path: /var/suwayomi/files/backups
     state: directory
     mode: "0755"
-  loop:
-    - /var/suwayomi/files/backups
-    - /var/suwayomi/downloads/mangas
   tags: cifs
 
-- name: Mount CIFS shares
+- name: Mount CIFS share (backups + mangas)
   ansible.builtin.mount:
-    src: "{{ item.src }}"
-    path: "{{ item.path }}"
-    opts: "{{ item.opts }}"
+    src: "//10.0.10.1/codex/server-backups/suwayomi"
+    path: /var/suwayomi/files/backups
+    opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
     fstype: cifs
     state: mounted
-  loop:
-    - src: "//10.0.10.1/codex/server-backups/suwayomi"
-      path: /var/suwayomi/files/backups
-      opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
-    - src: "//10.0.10.1/codex/media/manga"
-      path: /var/suwayomi/downloads/mangas
-      opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
+  tags: cifs
+
+- name: Ensure mangas directory exists on CIFS share
+  ansible.builtin.file:
+    path: /var/suwayomi/files/backups/mangas
+    state: directory
+    mode: "0755"
+  tags: cifs
+
+- name: Create symlink for mangas
+  ansible.builtin.file:
+    src: /var/suwayomi/files/backups/mangas
+    dest: /var/suwayomi/downloads/mangas
+    state: link
+    force: true
   tags: cifs
 
 #

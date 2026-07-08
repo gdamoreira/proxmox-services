@@ -3,25 +3,18 @@ set -euo pipefail
 
 BACKUP_DIR="server-backups/suwayomi"
 DATE=$(date +%Y-%m-%d-%H%M%S)
-TMPDIR=$(mktemp -d)
-
-trap 'rm -rf "$TMPDIR"' EXIT
+ARCHIVE="/tmp/suwayomi-files-$DATE.tar.gz"
 
 echo "=== Suwayomi backup $DATE ==="
 
-echo "Copying database and config from container..."
-docker cp suwayomi-suwayomi-1:/home/suwayomi/.local/share/Tachidesk/database.mv.db "$TMPDIR/" 2>/dev/null || true
-docker cp suwayomi-suwayomi-1:/home/suwayomi/.local/share/Tachidesk/server.conf "$TMPDIR/" 2>/dev/null || true
-
-echo "Creating archive..."
-ARCHIVE="/tmp/suwayomi-backup-$DATE.tar.gz"
-tar czf "$ARCHIVE" -C "$TMPDIR" .
+echo "Archiving /var/suwayomi/files (excluding downloads)..."
+tar czf "$ARCHIVE" --exclude='downloads' -C /var/suwayomi files
 
 echo "Uploading to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR..."
 smbclient "{{ backup_cifs_server }}/{{ backup_cifs_share }}" \
   -U "{{ backup_cifs_username }}%{{ backup_cifs_password }}" \
-  -c "cd server-backups; mkdir suwayomi; cd suwayomi; put \"$ARCHIVE\" \"suwayomi-backup-$DATE.tar.gz\"" 2>&1 || true
+  -c "cd server-backups; mkdir suwayomi; cd suwayomi; put \"$ARCHIVE\" \"suwayomi-files-$DATE.tar.gz\"" 2>&1 || true
 
 rm -f "$ARCHIVE"
 
-echo "=== Suwayomi backup complete === (uploaded to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR/suwayomi-backup-$DATE.tar.gz)"
+echo "=== Suwayomi backup complete ==="
