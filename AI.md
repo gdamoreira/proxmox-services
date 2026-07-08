@@ -20,6 +20,7 @@ Currently defined service configs (Terraform + Ansible):
 | Coder | 10.0.10.2/16 | 506 | secondary (R820) | Self-hosted IDE |
 | Pihole | 10.0.0.3/16 | 507 | primary (NUC) | DNS local e filtro |
 | SSO | 10.0.0.5/16 | 508 | primary (NUC) | Keycloak authentication |
+| GitLab | 10.0.20.3/16 | 509 (LXC, keep) | secondary (R820) | DevOps platform (VM, not LXC yet) |
 
 Traefik acts as the ingress layer, routing to services on the private network via file-based config. The domain `damoreira.ml` is used for external access with Let's Encrypt ACME certificates.
 
@@ -142,7 +143,7 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 | ------ | ------- | -------- | --- | ----------- | --------- | -------- |
 | | Docker | docker | 10.0.20.1 | Host de containers | `docker.damoreira.ml` | |
 | | Heimdall | heimdall | 10.0.20.2 | Dashboard de aplicações | `apps.damoreira.ml` | |
-| | GitLab | gitlab | 10.0.20.3 | Plataforma DevOps completa | `gitlab.damoreira.ml` | |
+| ✅ | GitLab | gitlab | 10.0.20.3 | Plataforma DevOps completa | `gitlab.damoreira.ml` | Hypervisor 1 |
 | ✅ | Harbor | harbor | 10.0.20.4 | Registro de containers | `harbor.damoreira.ml` | |
 | | Nexus | nexus | 10.0.20.5 | Gerenciador de artefatos | `nexus.damoreira.ml` | |
 | | TeamCity | teamcity | 10.0.20.6 | Integração contínua | `ci.damoreira.ml` | |
@@ -169,7 +170,8 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 - [x] **Complete Kafka** — rewritten with KRaft mode, systemd service, server.properties, handlers.
 - [ ] **Fix inventory**: `10.0.20.11` is in `[kafka]` but not in `[common]` — verify it gets common role via the playbook.
 - [ ] **Provide `plex_claim_token` and `kometa_plex_token`** at runtime or via Ansible Vault — these are required for Plex claim and Kometa to work.
-- [ ] **Provision remaining services** from the service tables above (Docker, Heimdall, GitLab, Nexus, TeamCity, etc.).
+- [x] **GitLab IP fix** — VM changed from DHCP (10.0.0.21) to static 10.0.20.3; Terraform LXC config (509) created but not applied (VM is Omnibus, not Docker); Traefik route updated with TLS.
+- [ ] **Provision remaining services** from the service tables above (Docker, Heimdall, Nexus, TeamCity, etc.).
 
 ### Backup (weekly, systemd timer)
 - Harbor: pg_dump (4 DBs) + config → `/mnt/backup/harbor/`
