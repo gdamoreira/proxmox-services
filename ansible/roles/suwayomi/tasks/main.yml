@@ -118,21 +118,13 @@
   no_log: true
   tags: cifs
 
-- name: Mount codex share
+- name: Mount downloads from codex
   ansible.builtin.mount:
-    src: "//10.0.10.1/codex"
-    path: /mnt/codex
+    src: "//10.0.10.1/codex/applications/suwayomi/downloads"
+    path: /var/suwayomi/downloads
     opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
     fstype: cifs
     state: mounted
-  tags: cifs
-
-- name: Ensure downloads symlink
-  ansible.builtin.file:
-    src: /mnt/codex/server-backups/suwayomi/files/downloads
-    dest: /var/suwayomi/downloads
-    state: link
-    force: true
   tags: cifs
 
 #
