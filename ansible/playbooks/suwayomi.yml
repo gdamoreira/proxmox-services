@@ -1,0 +1,21 @@
+---
+- hosts: suwayomi
+  gather_facts: false
+  pre_tasks:
+    - name: Check if Python is installed
+      ansible.builtin.raw: which python3
+      register: python_check
+      ignore_errors: true
+      changed_when: false
+      tags: always
+    - name: Bootstrap Python
+      ansible.builtin.raw: apk add --no-cache python3
+      changed_when: false
+      when: python_check is failed
+      tags: always
+    - name: Gather facts
+      ansible.builtin.setup:
+      tags: always
+  roles:
+    - { role: common, tags: all }
+    - { role: suwayomi, tags: suwayomi }

@@ -4,7 +4,7 @@
 - import_playbook: ./playbooks/kafka.yml
 - import_playbook: ./playbooks/plex.yml
 - import_playbook: ./playbooks/harbor.yml
-- import_playbook: ./playbooks/mangareader.yml
+- import_playbook: ./playbooks/suwayomi.yml
 - import_playbook: ./playbooks/coder.yml
 - import_playbook: ./playbooks/pihole.yml
 - import_playbook: ./playbooks/sso.yml

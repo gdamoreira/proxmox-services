@@ -13,6 +13,12 @@
   when: ansible_facts.os_family == "RedHat"
   tags: always
 
+- name: Upgrade dependencies (Alpine)
+  community.general.apk:
+    upgrade: true
+  when: ansible_facts.os_family == "Alpine"
+  tags: always
+
 - name: Install kitty-terminfo (Debian)
   ansible.builtin.apt:
     pkg:

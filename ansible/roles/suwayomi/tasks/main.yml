@@ -1,0 +1,66 @@
+---
+- name: Include config vars
+  ansible.builtin.include_vars: "vars/default.yml"
+
+- name: Upgrade dependencies (Debian)
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: full
+  when: ansible_facts.os_family == "Debian"
+
+- name: Upgrade dependencies (Alpine)
+  community.general.apk:
+    upgrade: true
+  when: ansible_facts.os_family == "Alpine"
+
+- name: Install required packages (Debian)
+  ansible.builtin.apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - docker-compose-plugin
+    state: latest
+  when: ansible_facts.os_family == "Debian"
+
+- name: Install required packages (Alpine)
+  community.general.apk:
+    name:
+      - ca-certificates
+      - curl
+      - docker
+    state: latest
+  when: ansible_facts.os_family == "Alpine"
+
+- name: Create suwayomi data directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ suwayomi_data_dir }}"
+    - "{{ suwayomi_data_dir }}/downloads"
+    - "{{ suwayomi_data_dir }}/files"
+
+- name: Deploy docker-compose.yml
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ suwayomi_compose_dir }}/docker-compose.yml"
+    mode: "0644"
+
+- name: Deploy logs.sh
+  ansible.builtin.template:
+    src: logs.sh.j2
+    dest: "{{ suwayomi_compose_dir }}/logs.sh"
+    mode: "0755"
+
+- name: Deploy update.sh
+  ansible.builtin.template:
+    src: update.sh.j2
+    dest: "{{ suwayomi_compose_dir }}/update.sh"
+    mode: "0755"
+
+- name: Ensure suwayomi is running
+  community.docker.docker_compose_v2:
+    project_src: "{{ suwayomi_compose_dir }}"
+    state: present
+    pull: always

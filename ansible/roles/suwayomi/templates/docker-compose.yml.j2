@@ -1,0 +1,29 @@
+---
+services:
+  suwayomi:
+    image: ghcr.io/suwayomi/suwayomi-server:preview
+    privileged: true
+    user: root
+    pull_policy: always
+    environment:
+      - TZ={{ timezone }}
+      - FLARESOLVERR_ENABLED=true
+      - FLARESOLVERR_URL=http://flaresolverr:8191
+      - BIND_IP=0.0.0.0
+      - DOWNLOAD_AS_CBZ=true
+      - EXTENSION_REPOS=["https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"]
+    volumes:
+      - {{ suwayomi_data_dir }}/downloads:/home/suwayomi/.local/share/Tachidesk/downloads
+      - {{ suwayomi_data_dir }}/files:/home/suwayomi/.local/share/Tachidesk
+    ports:
+      - "{{ suwayomi_port }}:4567"
+    restart: on-failure:3
+  flaresolverr:
+    image: ghcr.io/thephaseless/byparr:latest
+    container_name: flaresolverr
+    entrypoint: ["python3", "-m", "flaresolverr"]
+    environment:
+      - TZ={{ timezone }}
+    ports:
+      - "8191:8191"
+    restart: unless-stopped

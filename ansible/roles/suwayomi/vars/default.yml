@@ -1,0 +1,4 @@
+suwayomi_data_dir: "/var/suwayomi"
+suwayomi_compose_dir: "/root/suwayomi"
+suwayomi_port: 4567
+timezone: "Etc/UTC"

@@ -12,6 +12,8 @@ resource "proxmox_lxc" "suwayomi" {
 
   features {
     nesting = true
+    keyctl = true
+    fuse   = true
   }
 
   rootfs {
