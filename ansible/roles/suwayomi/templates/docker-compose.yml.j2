@@ -12,7 +12,7 @@ services:
       - FLARESOLVERR_URL=http://127.0.0.1:8191
       - BIND_IP=0.0.0.0
       - DOWNLOAD_AS_CBZ=true
-      - EXTENSION_STORES=["https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json"]
+      - EXTENSION_STORES=["https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json", "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.pb"]
     volumes:
       - {{ suwayomi_data_dir }}/downloads:/home/suwayomi/.local/share/Tachidesk/downloads
       - {{ suwayomi_data_dir }}/files:/home/suwayomi/.local/share/Tachidesk
