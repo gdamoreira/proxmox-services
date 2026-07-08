@@ -1,0 +1,5 @@
+---
+- hosts: kuma
+  roles:
+    - { role: common, tags: all }
+    - { role: kuma, tags: kuma }

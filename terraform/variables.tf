@@ -125,3 +125,83 @@ variable "plex_ip" {
   type    = string
   default = "10.0.5.1/16"
 }
+
+// kuma
+variable "kuma_lxcid" {
+  type    = number
+  default = 504
+}
+
+variable "kuma_mac" {
+  type    = string
+  default = "8A:3B:F1:29:47:CE"
+}
+
+variable "kuma_ip" {
+  type    = string
+  default = "10.0.0.9/16"
+}
+
+// mangareader
+variable "mangareader_lxcid" {
+  type    = number
+  default = 505
+}
+
+variable "mangareader_mac" {
+  type    = string
+  default = "7A:2B:E0:18:36:DA"
+}
+
+variable "mangareader_ip" {
+  type    = string
+  default = "10.0.5.2/16"
+}
+
+// coder
+variable "coder_lxcid" {
+  type    = number
+  default = 506
+}
+
+variable "coder_mac" {
+  type    = string
+  default = "4C:9A:FD:27:51:BF"
+}
+
+variable "coder_ip" {
+  type    = string
+  default = "10.0.10.2/16"
+}
+
+// pihole
+variable "pihole_lxcid" {
+  type    = number
+  default = 507
+}
+
+variable "pihole_mac" {
+  type    = string
+  default = "1E:5F:73:3B:AC:88"
+}
+
+variable "pihole_ip" {
+  type    = string
+  default = "10.0.0.3/16"
+}
+
+// sso
+variable "sso_lxcid" {
+  type    = number
+  default = 508
+}
+
+variable "sso_mac" {
+  type    = string
+  default = "9D:8C:42:11:E6:64"
+}
+
+variable "sso_ip" {
+  type    = string
+  default = "10.0.0.5/16"
+}

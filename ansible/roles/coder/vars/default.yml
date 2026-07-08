@@ -1,0 +1,7 @@
+coder_data_dir: "/srv/coder"
+coder_port: 8080
+coder_access_url: "https://coder.damoreira.ml"
+coder_db_user: "coder"
+coder_db_password: "necro1"
+coder_db_name: "coder"
+timezone: "Europe/Madrid"

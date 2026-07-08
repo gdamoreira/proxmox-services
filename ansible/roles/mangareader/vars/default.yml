@@ -1,0 +1,3 @@
+mangareader_data_dir: "/srv/mangareader"
+mangareader_port: 7000
+timezone: "Europe/Madrid"

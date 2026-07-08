@@ -1,0 +1,13 @@
+---
+http:
+  routers:
+    pihole-router:
+      rule: Host(`pihole.damoreira.ml`)
+      service: pihole
+      tls:
+        certResolver: letsencrypt
+  services:
+    pihole:
+      loadBalancer:
+        servers:
+        - url: http://10.0.0.3:80/

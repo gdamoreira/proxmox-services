@@ -1,0 +1,9 @@
+backup_cifs_server: "//10.0.10.1"
+backup_cifs_share: "backup"
+backup_cifs_mount: "/mnt/backup"
+backup_cifs_credentials_file: "/etc/samba/credentials/backup"
+backup_cifs_username: "damoreira"
+backup_cifs_password: "S3r3m0s0sr31s.;."
+backup_cifs_opts: "credentials={{ backup_cifs_credentials_file }},uid=0,gid=0,iocharset=utf8,vers=3.0,file_mode=0644,dir_mode=0755"
+backup_retention_days: 56
+backup_timer_calendar: "Mon *-*-* 03:00:00"

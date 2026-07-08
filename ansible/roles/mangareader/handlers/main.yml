@@ -1,0 +1,11 @@
+---
+- name: Restart Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+    daemon_reload: true
+
+- name: Restart Mangareader
+  community.docker.docker_compose_v2:
+    project_src: "{{ mangareader_data_dir }}"
+    state: restarted

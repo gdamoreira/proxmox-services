@@ -1,0 +1,34 @@
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_BASE="{{ backup_cifs_mount }}/harbor"
+DATE=$(date +%Y-%m-%d-%H%M%S)
+BACKUP_DIR="$BACKUP_BASE/$DATE"
+TMPDIR=$(mktemp -d)
+
+trap 'rm -rf "$TMPDIR"' EXIT
+
+mkdir -p "$BACKUP_DIR"
+
+echo "=== Harbor backup $DATE ==="
+
+# Dump PostgreSQL databases
+echo "Dumping databases..."
+docker exec harbor-db pg_dump -U postgres harbor > "$TMPDIR/harbor-db.sql" 2>/dev/null
+docker exec harbor-db pg_dump -U postgres registry > "$TMPDIR/harbor-registry.sql" 2>/dev/null || true
+docker exec harbor-db pg_dump -U postgres harbor_notary_server > "$TMPDIR/harbor-notary-server.sql" 2>/dev/null || true
+docker exec harbor-db pg_dump -U postgres harbor_notary_signer > "$TMPDIR/harbor-notary-signer.sql" 2>/dev/null || true
+
+# Copy config
+echo "Copying config..."
+cp /opt/harbor/harbor.yml "$TMPDIR/harbor.yml" 2>/dev/null || true
+
+# Create archive
+echo "Creating archive..."
+tar czf "$BACKUP_DIR/harbor-backup-$DATE.tar.gz" -C "$TMPDIR" .
+
+# Retention: keep last {{ backup_retention_days }} days
+echo "Cleaning backups older than {{ backup_retention_days }} days..."
+find "$BACKUP_BASE" -mindepth 1 -maxdepth 1 -type d -mtime +{{ backup_retention_days }} -exec rm -rf {} \; 2>/dev/null || true
+
+echo "=== Harbor backup complete: $BACKUP_DIR/harbor-backup-$DATE.tar.gz ==="

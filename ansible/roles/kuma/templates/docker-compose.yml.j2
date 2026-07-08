@@ -1,0 +1,12 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:latest
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports:
+      - "{{ kuma_port }}:3001"
+    volumes:
+      - {{ kuma_data_dir }}/data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - TZ={{ timezone }}

@@ -1,0 +1,63 @@
+---
+- name: Include config vars
+  ansible.builtin.include_vars: "vars/default.yml"
+
+- name: Install CIFS utils
+  ansible.builtin.package:
+    name: cifs-utils
+    state: present
+
+- name: Create Samba credentials directory
+  ansible.builtin.file:
+    path: /etc/samba/credentials
+    state: directory
+    mode: "0700"
+
+- name: Deploy backup CIFS credentials
+  ansible.builtin.copy:
+    dest: "{{ backup_cifs_credentials_file }}"
+    content: |
+      username={{ backup_cifs_username }}
+      password={{ backup_cifs_password }}
+      domain=WORKGROUP
+    mode: "0600"
+  no_log: true
+
+- name: Create backup mount point
+  ansible.builtin.file:
+    path: "{{ backup_cifs_mount }}"
+    state: directory
+    mode: "0755"
+
+- name: Mount backup CIFS share
+  ansible.builtin.mount:
+    src: "{{ backup_cifs_server }}/{{ backup_cifs_share }}"
+    path: "{{ backup_cifs_mount }}"
+    opts: "{{ backup_cifs_opts }}"
+    fstype: cifs
+    state: mounted
+
+- name: Deploy backup script
+  ansible.builtin.template:
+    src: "backup-{{ backup_service_name }}.sh.j2"
+    dest: "/usr/local/bin/backup-{{ backup_service_name }}.sh"
+    mode: "0700"
+
+- name: Deploy systemd service
+  ansible.builtin.template:
+    src: backup.service.j2
+    dest: "/etc/systemd/system/backup-{{ backup_service_name }}.service"
+    mode: "0644"
+
+- name: Deploy systemd timer
+  ansible.builtin.template:
+    src: backup.timer.j2
+    dest: "/etc/systemd/system/backup-{{ backup_service_name }}.timer"
+    mode: "0644"
+
+- name: Enable and start backup timer
+  ansible.builtin.systemd:
+    name: "backup-{{ backup_service_name }}.timer"
+    state: started
+    enabled: yes
+    daemon_reload: yes

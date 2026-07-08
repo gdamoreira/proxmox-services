@@ -3,3 +3,4 @@
   roles:
     - { role: common, tags: all }
     - { role: harbor, tags: harbor }
+    - { role: backup, tags: backup, vars: { backup_service_name: harbor } }

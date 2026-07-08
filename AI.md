@@ -4,17 +4,22 @@
 
 This project provisions and configures self-hosted infrastructure services on a Proxmox VE hypervisor using a two-phase pattern:
 
-1. **Terraform** creates LXC containers (LXC IDs 500–503) on the Proxmox host with static IPs, SSH keys, and resource limits.
+1. **Terraform** creates LXC containers on Proxmox with static IPs, SSH keys, and resource limits.
 2. **Ansible** configures each container — installing software, writing configs, and starting services.
 
-Currently deployed services:
+Currently defined service configs (Terraform + Ansible):
 
-| Service | IP | LXC ID | Purpose |
-|---------|-----|--------|---------|
-| Traefik | 10.0.0.8/16 | 500 | Reverse proxy / TLS termination / API gateway |
-| Harbor | 10.0.20.4/16 | 501 | Private container image registry + vulnerability scanner |
-| Plex | 10.0.5.1/16 | 503 | Media server |
-| Kafka | 10.0.20.11/16 | 502 | Event streaming / message broker |
+| Service | IP | LXC ID | Provider | Purpose |
+|---------|-----|--------|----------|---------|
+| Traefik | 10.0.0.8/16 | 500 | primary (NUC) | Reverse proxy / TLS termination / API gateway |
+| Harbor | 10.0.20.4/16 | 501 | secondary (R820) | Private container image registry |
+| Plex | 10.0.5.1/16 | 503 | secondary (R820) | Media server |
+| Kafka | 10.0.20.11/16 | 502 | secondary (R820) | Event streaming / message broker (KRaft) |
+| Kuma | 10.0.0.9/16 | 504 | primary (NUC) | Uptime monitoring |
+| Mangareader | 10.0.5.2/16 | 505 | secondary (R820) | Suwayomi manga reader |
+| Coder | 10.0.10.2/16 | 506 | secondary (R820) | Self-hosted IDE |
+| Pihole | 10.0.0.3/16 | 507 | primary (NUC) | DNS local e filtro |
+| SSO | 10.0.0.5/16 | 508 | primary (NUC) | Keycloak authentication |
 
 Traefik acts as the ingress layer, routing to services on the private network via file-based config. The domain `damoreira.ml` is used for external access with Let's Encrypt ACME certificates.
 
@@ -39,10 +44,12 @@ Traefik acts as the ingress layer, routing to services on the private network vi
 
 ### Notable observations
 
-- Kafka uses AlmaLinux 9 (dnf) while Traefik, Harbor, and Plex use Ubuntu 22.04 (apt)
-- Three different deployment strategies exist side-by-side: Traefik as a binary+systemd, Harbor via its offline installer, Plex via Docker Compose managed by Ansible, and Kafka as a raw tarball
-- The Plex LXC runs the entire media stack as Docker containers (Plex, Sonarr, Radarr, qBittorrent, etc.) — the LXC is a Docker host, not a single-service container
-- All host_vars files are identical (just `ansible_python_interpreter: /usr/bin/python3`)
+- Kafka uses AlmaLinux 9 (dnf) while all other services use Ubuntu 22.04 (apt)
+- `common` role handles both package managers via `ansible_facts.os_family`
+- Four deployment strategies exist: Traefik as binary+systemd, Harbor via offline installer, Kafka via raw tarball+KRaft+systemd, and most others via Docker Compose
+- The Plex LXC runs the entire media stack (15+ Docker containers) — it's a Docker host, not a single-service container
+- All host_vars files are identical — consider using `group_vars/all.yml` instead
+- Mangareader, Coder, Pihole, SSO, Kuma, and Plex all follow the same Docker Compose pattern
 
 ---
 
@@ -157,13 +164,20 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 - [ ] **Harden Harbor passwords**: DB and admin passwords should not be `necro1`.
 
 ### Reliability
-- [ ] **Fix Harbor handlers** (`roles/harbor/handlers/main.yml`): `docker_container` module usage is incorrect (no `name` field; `loop` references undefined `docker_images.stdout_lines`).
-- [ ] **Remove duplicate Harbor template**: `roles/kafka/templates/harbor.yml.j2` — kafka should not have a harbor config template.
-- [ ] **Add Kafka systemd service / handlers** — Kafka currently has no startup configuration; it's only downloaded and extracted.
-- [ ] **Complete Kafka service configuration** (e.g., `server.properties` template) — only the binary is downloaded.
-- [ ] **Fix inventory**: `10.0.0.8` is listed under both `[traefik]` and `[harbor]` in `production`. Should be aligned with actual LXC assignment.
+- [x] **Fix Harbor handlers** — rewritten to use `community.docker.docker_compose_v2`.
+- [x] **Remove duplicate Harbor template** from kafka role — deleted.
+- [x] **Complete Kafka** — rewritten with KRaft mode, systemd service, server.properties, handlers.
+- [ ] **Fix inventory**: `10.0.20.11` is in `[kafka]` but not in `[common]` — verify it gets common role via the playbook.
 - [ ] **Provide `plex_claim_token` and `kometa_plex_token`** at runtime or via Ansible Vault — these are required for Plex claim and Kometa to work.
-- [ ] **Provision remaining services** from the service tables above, starting with the `10.0.20.x` subnet (Docker, Heimdall, GitLab, Nexus, TeamCity, etc.).
+- [ ] **Provision remaining services** from the service tables above (Docker, Heimdall, GitLab, Nexus, TeamCity, etc.).
+
+### Backup (weekly, systemd timer)
+- Harbor: pg_dump (4 DBs) + config → `/mnt/backup/harbor/`
+- Kafka: server.properties only → `/mnt/backup/kafka/`
+- Mangareader: H2 DB + config (docker cp) → `/mnt/backup/mangareader/`
+- Destino: CIFS mount `//10.0.10.1/backup` em `/mnt/backup`
+- Retenção: 8 semanas (find -mtime +56)
+- Pré-requisito: criar shared folder `backup` no Synology DSM
 
 ### Maintainability
 - [ ] **Standardize OS images**: Mix of Ubuntu 22.04 and AlmaLinux 9 increases maintenance burden. Consider unifying.
@@ -173,6 +187,18 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 - [ ] **Idempotency for Harbor install**: `shell: ./harbor/install.sh` runs every time; add a `when: not harbor_downloaded.stat.exists` guard or use `creates`.
 - [ ] **YAML linting**: Add `.yamllint` config and run `yamllint` in CI (`.yamllint` file exists but is unconfigured).
 - [ ] **Keep AI.md in sync** with the actual state of the repo — update as new services are added or IPs change.
+
+### Terraform — adopting existing LXCs
+
+If an LXC already exists (created via proxmox-helper or manually), use `terraform import` to adopt it:
+
+```bash
+terraform import proxmox_lxc.<service> <node>/lxc/<vmid>
+# Example:
+terraform import proxmox_lxc.mangareader pve/lxc/505
+```
+
+Update the `vmid`, `hwaddr`, and `ip` in `variables.tf` to match the existing container before importing.
 
 ### CI / Automation
 - [ ] **Add terraform fmt / validate** check in CI.

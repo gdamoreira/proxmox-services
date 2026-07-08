@@ -1,0 +1,5 @@
+---
+- hosts: sso
+  roles:
+    - { role: common, tags: all }
+    - { role: sso, tags: sso }

@@ -21,33 +21,92 @@
 
 - name: Validate Java version
   assert:
-    that: 
+    that:
       - "java_version.stdout is version('21', '>=')"
 
 - name: Create Kafka group
   ansible.builtin.group:
-    name: kafka
+    name: "{{ kafka_group }}"
     state: present
 
 - name: Create Kafka user
   ansible.builtin.user:
-    name: kafka
-    group: kafka
+    name: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
     shell: /sbin/nologin
     state: present
     create_home: false
 
-- name: Check Kafka folder exists
-  stat: "path={{ kafka_home_dir }}/kafka"
-  register: kafka_downloaded
+- name: Check if Kafka is already extracted
+  stat:
+    path: "{{ kafka_bin_dir }}/bin/kafka-server-start.sh"
+  register: kafka_extracted
 
-- name: Download Kafka
-  ansible.builtin.unarchive:
-    src: "{{ kafka_offline_installer_url }}"
-    dest: "{{ kafka_home_dir }}"
-    remote_src: true
-  when: not kafka_downloaded.stat.exists
+- name: Download and extract Kafka
+  when: not kafka_extracted.stat.exists
+  block:
+    - name: Download Kafka tarball
+      ansible.builtin.get_url:
+        url: "{{ kafka_offline_installer_url }}"
+        dest: /tmp/{{ kafka_offline_installer_tar_file }}
+        timeout: 120
 
-- name: Move extracted kafka folder to correct path
-  command: mv {{ kafka_home_dir }}/{{ kafka_unpacked_dir }} {{ kafka_home_dir }}/kafka
-  when: not kafka_downloaded.stat.exists
+    - name: Extract Kafka tarball
+      ansible.builtin.unarchive:
+        src: /tmp/{{ kafka_offline_installer_tar_file }}
+        dest: "{{ kafka_home_dir }}"
+        remote_src: true
+
+    - name: Rename extracted directory
+      ansible.builtin.command:
+        cmd: mv {{ kafka_home_dir }}/{{ kafka_unpacked_dir }} {{ kafka_bin_dir }}
+        creates: "{{ kafka_bin_dir }}"
+
+- name: Create data directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    mode: "0755"
+  loop:
+    - "{{ kafka_data_dir }}"
+    - "{{ kafka_log_dir }}"
+
+- name: Deploy server.properties
+  ansible.builtin.template:
+    src: server.properties.j2
+    dest: "{{ kafka_bin_dir }}/config/kraft/server.properties"
+    mode: "0644"
+  notify: Restart Kafka
+
+- name: Generate Kafka cluster ID
+  ansible.builtin.command:
+    cmd: "{{ kafka_bin_dir }}/bin/kafka-storage.sh random-uuid"
+  register: kafka_cluster_id
+  changed_when: false
+
+- name: Check if storage is already formatted
+  ansible.builtin.stat:
+    path: "{{ kafka_data_dir }}/meta.properties"
+  register: kafka_meta
+
+- name: Format KRaft storage
+  when: not kafka_meta.stat.exists
+  ansible.builtin.command:
+    cmd: "{{ kafka_bin_dir }}/bin/kafka-storage.sh format -t {{ kafka_cluster_id.stdout }} -c {{ kafka_bin_dir }}/config/kraft/server.properties"
+  notify: Restart Kafka
+
+- name: Deploy systemd service
+  ansible.builtin.template:
+    src: kafka.service.j2
+    dest: /etc/systemd/system/kafka.service
+    mode: "0644"
+  notify: Restart Kafka
+
+- name: Enable and start Kafka
+  ansible.builtin.systemd:
+    name: kafka
+    state: started
+    enabled: yes
+    daemon_reload: yes

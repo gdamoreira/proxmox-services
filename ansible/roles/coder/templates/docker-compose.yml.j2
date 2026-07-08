@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: coder-db
+    restart: unless-stopped
+    volumes:
+      - {{ coder_data_dir }}/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER={{ coder_db_user }}
+      - POSTGRES_PASSWORD={{ coder_db_password }}
+      - POSTGRES_DB={{ coder_db_name }}
+      - TZ={{ timezone }}
+
+  coder:
+    image: coder/coder:latest
+    container_name: coder
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "{{ coder_port }}:8080"
+    volumes:
+      - {{ coder_data_dir }}/coder:/home/coder
+    environment:
+      - CODER_ACCESS_URL={{ coder_access_url }}
+      - CODER_PG_CONNECTION_URL=postgres://{{ coder_db_user }}:{{ coder_db_password }}@postgres:5432/{{ coder_db_name }}?sslmode=disable
+      - TZ={{ timezone }}

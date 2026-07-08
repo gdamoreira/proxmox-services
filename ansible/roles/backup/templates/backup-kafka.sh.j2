@@ -1,0 +1,27 @@
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_BASE="{{ backup_cifs_mount }}/kafka"
+DATE=$(date +%Y-%m-%d-%H%M%S)
+BACKUP_DIR="$BACKUP_BASE/$DATE"
+TMPDIR=$(mktemp -d)
+
+trap 'rm -rf "$TMPDIR"' EXIT
+
+mkdir -p "$BACKUP_DIR"
+
+echo "=== Kafka backup $DATE ==="
+
+# Copy config
+echo "Copying config..."
+cp /etc/kafka/config/kraft/server.properties "$TMPDIR/server.properties" 2>/dev/null || true
+
+# Create archive
+echo "Creating archive..."
+tar czf "$BACKUP_DIR/kafka-backup-$DATE.tar.gz" -C "$TMPDIR" .
+
+# Retention: keep last {{ backup_retention_days }} days
+echo "Cleaning backups older than {{ backup_retention_days }} days..."
+find "$BACKUP_BASE" -mindepth 1 -maxdepth 1 -type d -mtime +{{ backup_retention_days }} -exec rm -rf {} \; 2>/dev/null || true
+
+echo "=== Kafka backup complete: $BACKUP_DIR/kafka-backup-$DATE.tar.gz ==="

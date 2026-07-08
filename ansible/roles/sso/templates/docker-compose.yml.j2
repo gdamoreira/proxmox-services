@@ -1,0 +1,35 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sso-db
+    restart: unless-stopped
+    volumes:
+      - {{ sso_data_dir }}/postgres:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER={{ sso_db_user }}
+      - POSTGRES_PASSWORD={{ sso_db_password }}
+      - POSTGRES_DB={{ sso_db_name }}
+      - TZ={{ timezone }}
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:latest
+    container_name: sso
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "{{ sso_port }}:8080"
+    volumes:
+      - {{ sso_data_dir }}/keycloak:/opt/keycloak/data
+    environment:
+      - KC_DB=postgres
+      - KC_DB_URL=jdbc:postgresql://postgres:5432/{{ sso_db_name }}
+      - KC_DB_USERNAME={{ sso_db_user }}
+      - KC_DB_PASSWORD={{ sso_db_password }}
+      - KC_HOSTNAME=sso.damoreira.ml
+      - KC_HTTP_PORT=8080
+      - KC_HTTP_RELATIVE_PATH=/auth
+      - KEYCLOAK_ADMIN={{ sso_admin_user }}
+      - KEYCLOAK_ADMIN_PASSWORD={{ sso_admin_password }}
+      - TZ={{ timezone }}
+    command: start

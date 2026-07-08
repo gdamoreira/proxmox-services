@@ -1,0 +1,5 @@
+pihole_data_dir: "/srv/pihole"
+pihole_port: 80
+pihole_password: "necro1"
+pihole_dns: "10.0.0.1"
+timezone: "Europe/Madrid"

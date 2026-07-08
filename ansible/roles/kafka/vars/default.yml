@@ -6,3 +6,18 @@ kafka_offline_installer_url: "https://downloads.apache.org/kafka/{{ kafka_offlin
 
 kafka_home_dir: /etc
 kafka_tar_file: "{{ kafka_home_dir }}/{{ kafka_offline_installer_tar_file }}"
+kafka_bin_dir: "{{ kafka_home_dir }}/kafka"
+
+kafka_user: kafka
+kafka_group: kafka
+
+kafka_node_id: 1
+kafka_ip: "10.0.20.11"
+kafka_port: 9092
+kafka_controller_port: 9093
+
+kafka_data_dir: /var/lib/kafka/data
+kafka_log_dir: /var/log/kafka
+
+kafka_heap_opts: "-Xms2G -Xmx2G"
+kafka_max_heap: "2G"

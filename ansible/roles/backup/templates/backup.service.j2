@@ -1,0 +1,7 @@
+[Unit]
+Description=Backup {{ backup_service_name }}
+Documentation=https://github.com/gdamoreira/proxmox-services
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/backup-{{ backup_service_name }}.sh

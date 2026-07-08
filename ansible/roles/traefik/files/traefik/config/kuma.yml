@@ -1,0 +1,13 @@
+---
+http:
+  routers:
+    kuma-router:
+      rule: Host(`kuma.damoreira.ml`)
+      service: kuma
+      tls:
+        certResolver: letsencrypt
+  services:
+    kuma:
+      loadBalancer:
+        servers:
+        - url: http://10.0.0.9:3001/
