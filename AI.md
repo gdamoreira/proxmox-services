@@ -79,7 +79,7 @@ All services route to Traefik at `10.0.0.8` with `noTLSVerify: true`. The tunnel
 | `teamcity.damoreira.ml` | `https://10.0.0.8` | |
 | `torrent.damoreira.ml` | `https://10.0.0.8` | |
 | `pve.damoreira.ml` | `https://10.0.0.8` | |
-| `gitlab-ssh.damoreira.ml` | `ssh://10.0.0.66:22` | SSH, not HTTPS |
+| `gitlab-ssh.damoreira.ml` | `ssh://10.0.20.3:22` | SSH, not HTTPS |
 | `mangareader.damoreira.ml` | `https://10.0.0.8` | |
 | `traefik.damoreira.ml` | `https://10.0.0.8` | |
 | `virtus.damoreira.ml` | `https://10.0.0.8` | |

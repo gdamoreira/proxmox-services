@@ -1,0 +1,52 @@
+---
+- hosts: all
+  gather_facts: yes
+  vars:
+    new_ip: "10.0.20.3/16"
+    new_gateway: "10.0.0.1"
+    new_dns: ["10.0.0.1"]
+    new_hostname: "gitlab"
+    gitlab_hostname: "gitlab.damoreira.ml"
+    netplan_file: "/etc/netplan/50-cloud-init.yaml"
+
+  tasks:
+    - name: Get current netplan config
+      ansible.builtin.slurp:
+        src: "{{ netplan_file }}"
+      register: current_netplan
+
+    - name: Backup current netplan
+      ansible.builtin.copy:
+        src: "{{ netplan_file }}"
+        dest: "{{ netplan_file }}.bak"
+        remote_src: yes
+        mode: "0644"
+
+    - name: Deploy static IP netplan config
+      ansible.builtin.copy:
+        dest: "{{ netplan_file }}"
+        content: |
+          network:
+            version: 2
+            ethernets:
+              ens18:
+                addresses:
+                  - {{ new_ip }}
+                gateway4: {{ new_gateway }}
+                nameservers:
+                  addresses: {{ new_dns }}
+        mode: "0644"
+
+    - name: Update /etc/hosts with FQDN
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: "^{{ new_ip.split('/')[0] }}"
+        line: "{{ new_ip.split('/')[0] }} {{ gitlab_hostname }} {{ new_hostname }}"
+        insertbefore: BOF
+
+    - name: Apply netplan
+      ansible.builtin.command:
+        cmd: netplan apply
+      changed_when: true
+      async: 30
+      poll: 0

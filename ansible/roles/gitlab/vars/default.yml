@@ -1,0 +1,5 @@
+gitlab_data_dir: "/srv/gitlab"
+gitlab_hostname: "gitlab.damoreira.ml"
+gitlab_port: 80
+gitlab_ssh_port: 2222
+timezone: "Europe/Madrid"

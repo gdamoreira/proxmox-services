@@ -205,3 +205,19 @@ variable "sso_ip" {
   type    = string
   default = "10.0.0.5/16"
 }
+
+// gitlab
+variable "gitlab_lxcid" {
+  type    = number
+  default = 509
+}
+
+variable "gitlab_mac" {
+  type    = string
+  default = "6A:3E:2C:18:47:AB"
+}
+
+variable "gitlab_ip" {
+  type    = string
+  default = "10.0.20.3/16"
+}

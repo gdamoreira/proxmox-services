@@ -1,0 +1,5 @@
+---
+- hosts: gitlab
+  roles:
+    - { role: common, tags: all }
+    - { role: gitlab, tags: gitlab }

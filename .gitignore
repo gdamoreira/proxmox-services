@@ -4,3 +4,4 @@
 *.tfstate.*
 terraform/*.tfstate
 terraform/*.tfstate.*
+.idea/

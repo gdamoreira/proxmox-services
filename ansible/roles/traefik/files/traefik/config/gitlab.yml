@@ -4,8 +4,10 @@ http:
     gitlab-router:
       rule: Host(`gitlab.damoreira.ml`)
       service: gitlab
+      tls:
+        certResolver: letsencrypt
   services:
     gitlab:
       loadBalancer:
         servers:
-        - url: https://10.0.0.66
+        - url: http://10.0.20.3:80
