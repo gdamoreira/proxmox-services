@@ -16,6 +16,11 @@
     - name: Gather facts
       ansible.builtin.setup:
       tags: always
+    - name: Remove conflicting Docker repo file
+      ansible.builtin.file:
+        path: /etc/apt/sources.list.d/download_docker_com_linux_debian.list
+        state: absent
+      tags: always
   roles:
     - { role: common, tags: all }
     - { role: suwayomi, tags: suwayomi }
