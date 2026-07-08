@@ -155,7 +155,7 @@ variable "suwayomi_mac" {
 
 variable "suwayomi_ip" {
   type    = string
-  default = "10.0.5.4/16"
+  default = "10.0.5.2/16"
 }
 
 // coder
