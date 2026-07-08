@@ -118,20 +118,21 @@
   no_log: true
   tags: cifs
 
-- name: Create CIFS mount point for files
-  ansible.builtin.file:
-    path: /var/suwayomi/files
-    state: directory
-    mode: "0755"
-  tags: cifs
-
-- name: Mount CIFS share (files + downloads)
+- name: Mount codex share
   ansible.builtin.mount:
-    src: "//10.0.10.1/codex/server-backups/suwayomi/files"
-    path: /var/suwayomi/files
+    src: "//10.0.10.1/codex"
+    path: /mnt/codex
     opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
     fstype: cifs
     state: mounted
+  tags: cifs
+
+- name: Ensure downloads symlink
+  ansible.builtin.file:
+    src: /mnt/codex/server-backups/suwayomi/files/downloads
+    dest: /var/suwayomi/downloads
+    state: link
+    force: true
   tags: cifs
 
 #
