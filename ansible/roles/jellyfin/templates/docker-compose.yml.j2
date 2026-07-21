@@ -1,0 +1,18 @@
+---
+services:
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    restart: unless-stopped
+    network_mode: host
+    userns_mode: host
+    security_opt:
+      - apparmor=unconfined
+    volumes:
+      - {{ jellyfin_data_dir }}/config:/config
+      - {{ jellyfin_data_dir }}/cache:/cache
+      - {{ media_dir }}:/media:ro
+    environment:
+      - PUID=0
+      - PGID=0
+      - TZ={{ timezone }}

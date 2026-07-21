@@ -1,0 +1,13 @@
+---
+http:
+  routers:
+    jellyfin-router:
+      rule: Host(`jellyfin.damoreira.ml`)
+      service: jellyfin
+      tls:
+        certResolver: letsencrypt
+  services:
+    jellyfin:
+      loadBalancer:
+        servers:
+        - url: http://10.0.5.4:8096/

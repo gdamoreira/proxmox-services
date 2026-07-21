@@ -1,0 +1,16 @@
+services:
+  ghost:
+    image: ghost:5-alpine
+    container_name: ghost
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "{{ ghost_port }}:2368"
+    volumes:
+      - {{ ghost_data_dir }}/content:/var/lib/ghost/content
+    environment:
+      - url=https://blog.damoreira.ml
+      - NODE_ENV=production
+      - database__client=sqlite3
+      - database__connection__filename=/var/lib/ghost/content/data/ghost.db
+      - TZ={{ timezone }}

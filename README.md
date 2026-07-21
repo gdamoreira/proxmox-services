@@ -17,6 +17,8 @@ Two-phase deployment:
 | Harbor | 10.0.20.4/16 | 501 | ✅ | Private container registry |
 | Kafka | 10.0.20.11/16 | 502 | ✅ | Event streaming |
 | Plex | 10.0.5.1/16 | 503 | ✅ | Media server + Docker stack |
+| Jellyfin | 10.0.5.4/16 | 504 | ❌ | Open-source media server |
+| Ghost | 10.0.5.5/16 | 510 | ❌ | Personal blog |
 
 ### Full Topology
 
@@ -32,6 +34,8 @@ Two-phase deployment:
 | 10.0.5.1 | plex | Plex + Media Stack | |
 | 10.0.5.2 | mangareader | Suwayomi | Hypervisor 2 |
 | 10.0.5.3 | torrent | Transmission | Hypervisor 1 |
+| 10.0.5.4 | jellyfin | Jellyfin | Hypervisor 1 |
+| 10.0.5.5 | ghost | Ghost | Hypervisor 1 |
 | 10.0.10.1 | codex | Synology NAS | Synology NAS |
 | 10.0.10.2 | coder | Coder IDE | Hypervisor 1 |
 | 10.0.20.1 | docker | Docker host | |
@@ -164,7 +168,14 @@ echo '{
 │   ├── traefik.tf           # Traefik LXC
 │   ├── harbor.tf            # Harbor LXC
 │   ├── kafka.tf             # Kafka LXC
-│   └── plex.tf              # Plex LXC
+│   ├── plex.tf              # Plex LXC
+│   ├── coder.tf             # Coder LXC
+│   ├── pihole.tf            # Pi-hole LXC
+│   ├── sso.tf               # Keycloak LXC
+│   ├── gitlab.tf            # GitLab LXC
+│   ├── suwayomi.tf          # Suwayomi LXC
+│   ├── jellyfin.tf          # Jellyfin LXC
+│   └── ghost.tf             # Ghost LXC
 │
 ├── ansible/
 │   ├── ansible.cfg
@@ -174,13 +185,22 @@ echo '{
 │   │   ├── traefik.yml
 │   │   ├── harbor.yml
 │   │   ├── kafka.yml
-│   │   └── plex.yml
+│   │   ├── plex.yml
+│   │   ├── coder.yml
+│   │   ├── pihole.yml
+│   │   ├── sso.yml
+│   │   ├── suwayomi.yml
+│   │   ├── jellyfin.yml
+│   │   └── ghost.yml
 │   ├── roles/
 │   │   ├── common/          # OS upgrades + base packages
 │   │   ├── traefik/         # Traefik binary + config
 │   │   ├── harbor/          # Harbor offline installer
 │   │   ├── kafka/           # Kafka tarball
-│   │   └── plex/            # Docker + Compose media stack
+│   │   ├── plex/            # Docker + Compose media stack
+│   │   ├── jellyfin/        # Jellyfin Docker Compose
+│   │   ├── ghost/           # Ghost Docker Compose
+│   │   ├── backup/          # CIFS backup systemd timer
 │   └── host_vars/
 │
 ├── AI.md                    # Project intelligence & roadmap

@@ -1,0 +1,3 @@
+ghost_data_dir: "/srv/ghost"
+ghost_port: 2368
+timezone: "Europe/Madrid"

@@ -1,0 +1,6 @@
+echo -e ""
+echo -e "\e[1mJellyfin LXC Container\e[m"
+echo -e "    🖥️  \e[m\e[33m OS: \e[1;92m{{ ansible_facts['distribution'] }} - Version: {{ ansible_facts['distribution_version'] }}\e[m"
+echo -e "    🏠  \e[m\e[33m Hostname: \e[1;92m$(hostname)\e[m"
+echo -e "    💡  \e[m\e[33m IP Address: \e[1;92m$(hostname -I | awk '{print $1}')\e[m"
+echo -e "    📺  \e[m\e[33m Jellyfin: \e[1;92mhttp://$(hostname -I | awk '{print $1}'):{{ jellyfin_port }}\e[m"

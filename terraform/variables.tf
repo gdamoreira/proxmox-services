@@ -221,3 +221,35 @@ variable "gitlab_ip" {
   type    = string
   default = "10.0.20.3/16"
 }
+
+// jellyfin
+variable "jellyfin_lxcid" {
+  type    = number
+  default = 504
+}
+
+variable "jellyfin_mac" {
+  type    = string
+  default = "AE:7A:1E:91:6C:3A"
+}
+
+variable "jellyfin_ip" {
+  type    = string
+  default = "10.0.5.4/16"
+}
+
+// ghost
+variable "ghost_lxcid" {
+  type    = number
+  default = 510
+}
+
+variable "ghost_mac" {
+  type    = string
+  default = "AE:7A:1E:91:6C:3B"
+}
+
+variable "ghost_ip" {
+  type    = string
+  default = "10.0.5.5/16"
+}

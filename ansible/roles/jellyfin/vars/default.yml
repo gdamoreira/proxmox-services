@@ -1,0 +1,7 @@
+jellyfin_data_dir: "/srv/jellyfin"
+jellyfin_port: 8096
+media_dir: "/mnt/media"
+media_share: "//10.0.10.1/codex/media"
+media_share_username: "damoreira"
+media_share_password: "S3r3m0s0sr31s.;."
+timezone: "Europe/Madrid"

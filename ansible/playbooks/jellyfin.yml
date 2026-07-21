@@ -1,0 +1,6 @@
+---
+- hosts: jellyfin
+  roles:
+    - { role: common, tags: all }
+    - { role: jellyfin, tags: jellyfin }
+    - { role: backup, tags: backup, vars: { backup_service_name: jellyfin } }

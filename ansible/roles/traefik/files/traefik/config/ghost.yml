@@ -1,0 +1,13 @@
+---
+http:
+  routers:
+    ghost-router:
+      rule: Host(`blog.damoreira.ml`)
+      service: ghost
+      tls:
+        certResolver: letsencrypt
+  services:
+    ghost:
+      loadBalancer:
+        servers:
+        - url: http://10.0.5.5:2368/

@@ -1,0 +1,5 @@
+---
+- hosts: ghost
+  roles:
+    - { role: common, tags: all }
+    - { role: ghost, tags: ghost }

@@ -8,3 +8,5 @@
 - import_playbook: ./playbooks/coder.yml
 - import_playbook: ./playbooks/pihole.yml
 - import_playbook: ./playbooks/sso.yml
+- import_playbook: ./playbooks/jellyfin.yml
+- import_playbook: ./playbooks/ghost.yml

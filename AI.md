@@ -21,6 +21,7 @@ Currently defined service configs (Terraform + Ansible):
 | Pihole | 10.0.0.3/16 | 507 | primary (NUC) | DNS local e filtro |
 | SSO | 10.0.0.5/16 | 508 | primary (NUC) | Keycloak authentication |
 | GitLab | 10.0.20.3/16 | 509 (LXC, keep) | secondary (R820) | DevOps platform (VM, not LXC yet) |
+| Ghost | 10.0.5.5/16 | 510 | secondary (R820) | Personal blog |
 
 Traefik acts as the ingress layer, routing to services on the private network via file-based config. The domain `damoreira.ml` is used for external access with Let's Encrypt ACME certificates.
 
@@ -86,6 +87,7 @@ All services route to Traefik at `10.0.0.8` with `noTLSVerify: true`. The tunnel
 | `virtus.damoreira.ml` | `https://10.0.0.8` | |
 | `alfred.damoreira.ml` | `https://10.0.0.8` | |
 | `coder.damoreira.ml` | `https://10.0.0.8` | |
+| `blog.damoreira.ml` | `https://10.0.0.8` | |
 | catch-all | `http_status:404` | |
 
 ### noTLSVerify requirement
@@ -129,6 +131,7 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 | ✅ | Plex | plex | 10.0.5.1 | Servidor de mídia | `plex.damoreira.ml` | |
 | ✅ | Suwayomi | mangareader | 10.0.5.2 | Leitor de mangás | `mangareader.damoreira.ml` | Hypervisor 2 |
 | ✅ | Transmission | torrent | 10.0.5.3 | Cliente torrent (Transmission) | `torrent.damoreira.ml` | Hypervisor 1 |
+| | Ghost | ghost | 10.0.5.5 | Blog pessoal | `blog.damoreira.ml` | Hypervisor 1 |
 
 ### 💾 Storage & Development
 
@@ -182,6 +185,7 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 - Pré-requisito: criar shared folder `backup` no Synology DSM
 
 ### Maintainability
+- [x] **Traefik route deployment**: New `*.yml` files in `roles/traefik/files/traefik/config/` require running `ansible-playbook playbooks/traefik.yml` to deploy. Do not mark DNS/ingress as done until Traefik has the route.
 - [ ] **Standardize OS images**: Mix of Ubuntu 22.04 and AlmaLinux 9 increases maintenance burden. Consider unifying.
 - [ ] **Terraform state exposure**: `terraform.tfstate` in repo root should be `.gitignored` or moved to remote state (S3/backend).
 - [ ] **Extract IP/MAC/LXC ID mapping** into a structured variable (e.g., `locals` map) instead of flat variables per service.
