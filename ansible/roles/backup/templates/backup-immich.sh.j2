@@ -1,0 +1,26 @@
+#!/bin/bash
+set -euo pipefail
+
+BACKUP_DIR="server-backups/immich"
+DATE=$(date +%Y-%m-%d-%H%M%S)
+TMPDIR=$(mktemp -d)
+
+trap 'rm -rf "$TMPDIR"' EXIT
+
+echo "=== Immich backup $DATE ==="
+
+echo "Dumping postgres database..."
+docker exec immich_postgres pg_dump -U postgres immich > "$TMPDIR/immich.sql"
+
+echo "Creating archive..."
+ARCHIVE="/tmp/immich-backup-$DATE.tar.gz"
+tar czf "$ARCHIVE" -C "$TMPDIR" .
+
+echo "Uploading to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR..."
+smbclient "{{ backup_cifs_server }}/{{ backup_cifs_share }}" \
+  -U "{{ backup_cifs_username }}%{{ backup_cifs_password }}" \
+  -c "cd server-backups; mkdir immich; cd immich; put \"$ARCHIVE\" \"immich-backup-$DATE.tar.gz\"" 2>&1 || true
+
+rm -f "$ARCHIVE"
+
+echo "=== Immich backup complete === (uploaded to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR/immich-backup-$DATE.tar.gz)"

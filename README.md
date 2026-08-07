@@ -19,6 +19,7 @@ Two-phase deployment:
 | Plex | 10.0.5.1/16 | 503 | ✅ | Media server + Docker stack |
 | Jellyfin | 10.0.5.4/16 | 504 | ❌ | Open-source media server |
 | Ghost | 10.0.5.5/16 | 510 | ❌ | Personal blog |
+| Immich | 10.0.5.6/16 | 511 | ✅ | Photo/video backup |
 
 ### Full Topology
 
@@ -36,6 +37,7 @@ Two-phase deployment:
 | 10.0.5.3 | torrent | Transmission | Hypervisor 1 |
 | 10.0.5.4 | jellyfin | Jellyfin | Hypervisor 1 |
 | 10.0.5.5 | ghost | Ghost | Hypervisor 1 |
+| 10.0.5.6 | immich | Immich | Hypervisor 1 |
 | 10.0.10.1 | codex | Synology NAS | Synology NAS |
 | 10.0.10.2 | coder | Coder IDE | Hypervisor 1 |
 | 10.0.20.1 | docker | Docker host | |
@@ -175,7 +177,8 @@ echo '{
 │   ├── gitlab.tf            # GitLab LXC
 │   ├── suwayomi.tf          # Suwayomi LXC
 │   ├── jellyfin.tf          # Jellyfin LXC
-│   └── ghost.tf             # Ghost LXC
+│   ├── ghost.tf             # Ghost LXC
+│   └── immich.tf            # Immich LXC
 │
 ├── ansible/
 │   ├── ansible.cfg
@@ -191,7 +194,8 @@ echo '{
 │   │   ├── sso.yml
 │   │   ├── suwayomi.yml
 │   │   ├── jellyfin.yml
-│   │   └── ghost.yml
+│   │   ├── ghost.yml
+│   │   └── immich.yml
 │   ├── roles/
 │   │   ├── common/          # OS upgrades + base packages
 │   │   ├── traefik/         # Traefik binary + config
@@ -200,6 +204,7 @@ echo '{
 │   │   ├── plex/            # Docker + Compose media stack
 │   │   ├── jellyfin/        # Jellyfin Docker Compose
 │   │   ├── ghost/           # Ghost Docker Compose
+│   │   ├── immich/          # Immich Docker Compose
 │   │   ├── backup/          # CIFS backup systemd timer
 │   └── host_vars/
 │

@@ -10,3 +10,4 @@
 - import_playbook: ./playbooks/sso.yml
 - import_playbook: ./playbooks/jellyfin.yml
 - import_playbook: ./playbooks/ghost.yml
+- import_playbook: ./playbooks/immich.yml

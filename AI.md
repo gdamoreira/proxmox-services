@@ -22,6 +22,7 @@ Currently defined service configs (Terraform + Ansible):
 | SSO | 10.0.0.5/16 | 508 | primary (NUC) | Keycloak authentication |
 | GitLab | 10.0.20.3/16 | 509 (LXC, keep) | secondary (R820) | DevOps platform (VM, not LXC yet) |
 | Ghost | 10.0.5.5/16 | 510 | secondary (R820) | Personal blog |
+| Immich | 10.0.5.6/16 | 511 | secondary (R820) | Photo/video backup |
 
 Traefik acts as the ingress layer, routing to services on the private network via file-based config. The domain `damoreira.ml` is used for external access with Let's Encrypt ACME certificates.
 
@@ -88,6 +89,7 @@ All services route to Traefik at `10.0.0.8` with `noTLSVerify: true`. The tunnel
 | `alfred.damoreira.ml` | `https://10.0.0.8` | |
 | `coder.damoreira.ml` | `https://10.0.0.8` | |
 | `blog.damoreira.ml` | `https://10.0.0.8` | |
+| `photos.damoreira.ml` | `https://10.0.0.8` | |
 | catch-all | `http_status:404` | |
 
 ### noTLSVerify requirement
@@ -132,6 +134,7 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 | ✅ | Suwayomi | mangareader | 10.0.5.2 | Leitor de mangás | `mangareader.damoreira.ml` | Hypervisor 2 |
 | ✅ | Transmission | torrent | 10.0.5.3 | Cliente torrent (Transmission) | `torrent.damoreira.ml` | Hypervisor 1 |
 | | Ghost | ghost | 10.0.5.5 | Blog pessoal | `blog.damoreira.ml` | Hypervisor 1 |
+| ✅ | Immich | immich | 10.0.5.6 | Backup de fotos | `photos.damoreira.ml` | Hypervisor 1 |
 
 ### 💾 Storage & Development
 

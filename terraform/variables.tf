@@ -253,3 +253,19 @@ variable "ghost_ip" {
   type    = string
   default = "10.0.5.5/16"
 }
+
+// immich
+variable "immich_lxcid" {
+  type    = number
+  default = 511
+}
+
+variable "immich_mac" {
+  type    = string
+  default = "AE:7A:1E:91:6C:3C"
+}
+
+variable "immich_ip" {
+  type    = string
+  default = "10.0.5.6/16"
+}
