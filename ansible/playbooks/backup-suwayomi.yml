@@ -3,10 +3,18 @@
   vars_files:
     - "../roles/backup/vars/default.yml"
   tasks:
-    - name: Install smbclient
-      ansible.builtin.apt:
-        name: smbclient
+    - name: Install NFS utils
+      ansible.builtin.package:
+        name: nfs-common
         state: present
+
+    - name: Mount backup NFS share
+      ansible.builtin.mount:
+        src: "{{ backup_nfs_server }}:{{ backup_nfs_share }}"
+        path: "{{ backup_mount }}"
+        opts: "{{ backup_nfs_opts }}"
+        fstype: nfs
+        state: mounted
 
     - name: Deploy backup script
       ansible.builtin.template:

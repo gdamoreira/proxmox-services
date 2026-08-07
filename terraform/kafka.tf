@@ -5,7 +5,7 @@ resource "proxmox_lxc" "kafka" {
   cores           = 4
   memory          = 8192
   ostemplate      = "local:vztmpl/almalinux-9-default_20240911_amd64.tar.xz"
-  unprivileged    = true
+  unprivileged    = false
   ostype          = "centos"
   ssh_public_keys = file(var.pub_ssh_key)
   start           = true

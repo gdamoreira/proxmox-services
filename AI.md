@@ -53,6 +53,7 @@ Traefik acts as the ingress layer, routing to services on the private network vi
 - The Plex LXC runs the entire media stack (15+ Docker containers) — it's a Docker host, not a single-service container
 - All host_vars files are identical — consider using `group_vars/all.yml` instead
 - Mangareader, Coder, Pihole, SSO, Kuma, and Plex all follow the same Docker Compose pattern
+- **Storage migration (Aug 2026)**: all NAS mounts migrated from CIFS/SMB to **NFSv4** (`10.0.10.1:/volume1/codex` → `/mnt/backup`). Kuma, Harbor, and Kafka were converted from unprivileged to privileged LXCs to support NFS mounts (recreated, no data kept). GitLab restore still uses smbclient (`//10.0.10.1/storage` not NFS-exported). Backup role supports both via `backup_fstype` (default nfs; kuma/harbor/kafka no longer override it).
 
 ---
 
@@ -182,10 +183,13 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 ### Backup (weekly, systemd timer)
 - Harbor: pg_dump (4 DBs) + config → `/mnt/backup/harbor/`
 - Kafka: server.properties only → `/mnt/backup/kafka/`
-- Mangareader: H2 DB + config (docker cp) → `/mnt/backup/mangareader/`
-- Destino: CIFS mount `//10.0.10.1/backup` em `/mnt/backup`
+- Mangareader: H2 DB + config (docker cp) → `/mnt/backup/suwayomi/`
+- Kuma: SQLite DB + screenshots → `/mnt/backup/kuma/`
+- Jellyfin: config → `/mnt/backup/jellyfin/`
+- Immich: pg_dump DB → `/mnt/backup/immich/` (imagens NÃO, já estão no NAS)
+- Destino: NFSv4 mount `10.0.10.1:/volume1/codex` em `/mnt/backup`
 - Retenção: 8 semanas (find -mtime +56)
-- Pré-requisito: criar shared folder `backup` no Synology DSM
+- Pré-requisito: shared folder `codex` exportado via NFS no Synology DSM
 
 ### Maintainability
 - [x] **Traefik route deployment**: New `*.yml` files in `roles/traefik/files/traefik/config/` require running `ansible-playbook playbooks/traefik.yml` to deploy. Do not mark DNS/ingress as done until Traefik has the route.

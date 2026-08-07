@@ -205,7 +205,7 @@ echo '{
 │   │   ├── jellyfin/        # Jellyfin Docker Compose
 │   │   ├── ghost/           # Ghost Docker Compose
 │   │   ├── immich/          # Immich Docker Compose
-│   │   ├── backup/          # CIFS backup systemd timer
+│   │   ├── backup/          # NFSv4 backup systemd timer
 │   └── host_vars/
 │
 ├── AI.md                    # Project intelligence & roadmap

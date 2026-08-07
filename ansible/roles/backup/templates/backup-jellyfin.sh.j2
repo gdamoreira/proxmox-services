@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-BACKUP_DIR="server-backups/jellyfin"
+BACKUP_BASE="{{ backup_mount }}/{{ backup_cifs_base }}/jellyfin"
 DATE=$(date +%Y-%m-%d-%H%M%S)
 TMPDIR=$(mktemp -d)
 
@@ -13,14 +13,8 @@ echo "Copying config..."
 cp -r {{ jellyfin_data_dir }}/config "$TMPDIR/config" 2>/dev/null || true
 
 echo "Creating archive..."
-ARCHIVE="/tmp/jellyfin-backup-$DATE.tar.gz"
+mkdir -p "$BACKUP_BASE"
+ARCHIVE="$BACKUP_BASE/jellyfin-backup-$DATE.tar.gz"
 tar czf "$ARCHIVE" -C "$TMPDIR" .
 
-echo "Uploading to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR..."
-smbclient "{{ backup_cifs_server }}/{{ backup_cifs_share }}" \
-  -U "{{ backup_cifs_username }}%{{ backup_cifs_password }}" \
-  -c "cd server-backups; mkdir jellyfin; cd jellyfin; put \"$ARCHIVE\" \"jellyfin-backup-$DATE.tar.gz\"" 2>&1 || true
-
-rm -f "$ARCHIVE"
-
-echo "=== Jellyfin backup complete === (uploaded to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR/jellyfin-backup-$DATE.tar.gz)"
+echo "=== Jellyfin backup complete: $ARCHIVE ==="

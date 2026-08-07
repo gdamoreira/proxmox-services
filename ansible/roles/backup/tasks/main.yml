@@ -2,16 +2,30 @@
 - name: Include config vars
   ansible.builtin.include_vars: "vars/default.yml"
 
+- name: Install NFS utils (Debian)
+  ansible.builtin.package:
+    name: nfs-common
+    state: present
+  when: backup_fstype == "nfs" and ansible_facts.os_family == "Debian"
+
+- name: Install NFS utils (RedHat)
+  ansible.builtin.package:
+    name: nfs-utils
+    state: present
+  when: backup_fstype == "nfs" and ansible_facts.os_family == "RedHat"
+
 - name: Install CIFS utils
   ansible.builtin.package:
     name: cifs-utils
     state: present
+  when: backup_fstype == "cifs"
 
 - name: Create Samba credentials directory
   ansible.builtin.file:
     path: /etc/samba/credentials
     state: directory
     mode: "0700"
+  when: backup_fstype == "cifs"
 
 - name: Deploy backup CIFS credentials
   ansible.builtin.copy:
@@ -22,20 +36,25 @@
       domain=WORKGROUP
     mode: "0600"
   no_log: true
+  when: backup_fstype == "cifs"
 
-- name: Create backup mount point
-  ansible.builtin.file:
-    path: "{{ backup_cifs_mount }}"
-    state: directory
-    mode: "0755"
+- name: Mount backup NFS share
+  ansible.builtin.mount:
+    src: "{{ backup_nfs_server }}:{{ backup_nfs_share }}"
+    path: "{{ backup_mount }}"
+    opts: "{{ backup_nfs_opts }}"
+    fstype: nfs
+    state: mounted
+  when: backup_fstype == "nfs"
 
 - name: Mount backup CIFS share
   ansible.builtin.mount:
     src: "{{ backup_cifs_server }}/{{ backup_cifs_share }}"
-    path: "{{ backup_cifs_mount }}"
+    path: "{{ backup_mount }}"
     opts: "{{ backup_cifs_opts }}"
     fstype: cifs
     state: mounted
+  when: backup_fstype == "cifs"
 
 - name: Deploy backup script
   ansible.builtin.template:

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-BACKUP_DIR="server-backups/suwayomi"
+BACKUP_BASE="{{ backup_mount }}/{{ backup_cifs_base }}/suwayomi"
 DATE=$(date +%Y-%m-%d-%H%M%S)
 ARCHIVE="/tmp/suwayomi-files-$DATE.tar.gz"
 
@@ -10,10 +10,9 @@ echo "=== Suwayomi backup $DATE ==="
 echo "Archiving /var/suwayomi/files (excluding downloads)..."
 tar czf "$ARCHIVE" --exclude='downloads' --warning=no-file-changed -C /var/suwayomi files 2>/dev/null || true
 
-echo "Uploading to {{ backup_cifs_server }}/{{ backup_cifs_share }}/$BACKUP_DIR..."
-smbclient "{{ backup_cifs_server }}/{{ backup_cifs_share }}" \
-  -U "{{ backup_cifs_username }}%{{ backup_cifs_password }}" \
-  -c "cd server-backups; mkdir suwayomi; cd suwayomi; put \"$ARCHIVE\" \"suwayomi-files-$DATE.tar.gz\"" 2>&1 || true
+echo "Storing to $BACKUP_BASE..."
+mkdir -p "$BACKUP_BASE"
+cp "$ARCHIVE" "$BACKUP_BASE/suwayomi-files-$DATE.tar.gz"
 
 rm -f "$ARCHIVE"
 

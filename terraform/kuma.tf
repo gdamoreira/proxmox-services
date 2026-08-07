@@ -5,8 +5,8 @@ resource "proxmox_lxc" "kuma" {
   memory          = 256
   ostype          = "debian"
   swap            = 512
-  unprivileged    = true
-  ostemplate      = "local:vztmpl/debian-12-standard_12.2-1_amd64.tar.zst"
+  unprivileged    = false
+  ostemplate      = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
   start           = true
   onboot          = true
   vmid            = var.kuma_lxcid

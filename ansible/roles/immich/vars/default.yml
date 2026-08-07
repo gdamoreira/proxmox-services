@@ -2,6 +2,7 @@ immich_data_dir: "/srv/immich"
 immich_nfs_server: "10.0.10.1"
 immich_nfs_share: "/volume1/codex/media/photos"
 immich_nfs_mount: "/mnt/immich"
+immich_nfs_opts: "vers=4,rsize=65536,wsize=65536,hard,timeo=600,retrans=2,_netdev"
 immich_port: 2283
 immich_db_password: "immich2026"
 timezone: "Europe/Madrid"

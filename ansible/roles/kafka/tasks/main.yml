@@ -73,10 +73,19 @@
     - "{{ kafka_data_dir }}"
     - "{{ kafka_log_dir }}"
 
+- name: Fix ownership of Kafka install directory
+  ansible.builtin.file:
+    path: "{{ kafka_bin_dir }}"
+    state: directory
+    owner: "{{ kafka_user }}"
+    group: "{{ kafka_group }}"
+    recurse: true
+  when: kafka_extracted.stat.exists
+
 - name: Deploy server.properties
   ansible.builtin.template:
     src: server.properties.j2
-    dest: "{{ kafka_bin_dir }}/config/kraft/server.properties"
+    dest: "{{ kafka_bin_dir }}/config/server.properties"
     mode: "0644"
   notify: Restart Kafka
 
@@ -94,7 +103,7 @@
 - name: Format KRaft storage
   when: not kafka_meta.stat.exists
   ansible.builtin.command:
-    cmd: "{{ kafka_bin_dir }}/bin/kafka-storage.sh format -t {{ kafka_cluster_id.stdout }} -c {{ kafka_bin_dir }}/config/kraft/server.properties"
+    cmd: "{{ kafka_bin_dir }}/bin/kafka-storage.sh format -t {{ kafka_cluster_id.stdout }} -c {{ kafka_bin_dir }}/config/server.properties"
   notify: Restart Kafka
 
 - name: Deploy systemd service

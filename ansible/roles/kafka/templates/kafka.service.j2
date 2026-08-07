@@ -8,7 +8,8 @@ Type=simple
 User={{ kafka_user }}
 Group={{ kafka_group }}
 Environment="KAFKA_HEAP_OPTS={{ kafka_heap_opts }}"
-ExecStart={{ kafka_bin_dir }}/bin/kafka-server-start.sh {{ kafka_bin_dir }}/config/kraft/server.properties
+Environment="LOG_DIR={{ kafka_log_dir }}"
+ExecStart={{ kafka_bin_dir }}/bin/kafka-server-start.sh {{ kafka_bin_dir }}/config/server.properties
 ExecStop={{ kafka_bin_dir }}/bin/kafka-server-stop.sh
 Restart=on-failure
 RestartSec=10

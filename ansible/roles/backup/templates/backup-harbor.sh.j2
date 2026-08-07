@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-BACKUP_BASE="{{ backup_cifs_mount }}/harbor"
+BACKUP_BASE="{{ backup_mount }}/harbor"
 DATE=$(date +%Y-%m-%d-%H%M%S)
 BACKUP_DIR="$BACKUP_BASE/$DATE"
 TMPDIR=$(mktemp -d)

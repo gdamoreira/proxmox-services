@@ -19,7 +19,7 @@
     pkg:
       - ca-certificates
       - curl
-      - cifs-utils
+      - nfs-common
       - gnupg
     state: latest
   when: ansible_facts.os_family == "Debian"
@@ -105,27 +105,16 @@
     state: present
 
 #
-# CIFS mounts for downloads and backups
+# NFS mounts for downloads
 #
-- name: Deploy SMB credentials
-  ansible.builtin.copy:
-    dest: /root/.smbcredentials
-    content: |
-      username={{ suwayomi_cifs_username }}
-      password={{ suwayomi_cifs_password }}
-      domain=WORKGROUP
-    mode: "0600"
-  no_log: true
-  tags: cifs
-
 - name: Mount downloads from codex
   ansible.builtin.mount:
-    src: "//10.0.10.1/codex/applications/suwayomi/downloads"
+    src: "10.0.10.1:/volume1/codex/applications/suwayomi/downloads"
     path: /var/suwayomi/downloads
-    opts: "uid=0,rw,credentials=/root/.smbcredentials,vers=3.0"
-    fstype: cifs
+    opts: "vers=4,rsize=65536,wsize=65536,hard,timeo=600,retrans=2,_netdev"
+    fstype: nfs
     state: mounted
-  tags: cifs
+  tags: nfs
 
 #
 # MOTD

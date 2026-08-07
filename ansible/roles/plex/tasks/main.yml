@@ -131,40 +131,18 @@
     recurse: true
   notify: Restart Media Stack
 
-- name: Install CIFS utils
+- name: Install NFS utils
   ansible.builtin.apt:
     pkg:
-      - cifs-utils
+      - nfs-common
     state: latest
 
-- name: Create credentials directory
-  ansible.builtin.file:
-    path: /etc/samba/credentials
-    state: directory
-    mode: "0700"
-
-- name: Deploy media credentials file
-  ansible.builtin.copy:
-    dest: /etc/samba/credentials/media
-    content: |
-      username={{ media_share_username }}
-      password={{ media_share_password }}
-      domain=WORKGROUP
-    mode: "0600"
-  no_log: true
-
-- name: Create media mount point
-  ansible.builtin.file:
-    path: "{{ media_dir }}"
-    state: directory
-    mode: "0755"
-
-- name: Mount CIFS media share
+- name: Mount NFS media share
   ansible.builtin.mount:
-    src: "{{ media_share }}"
+    src: "{{ media_nfs_server }}:{{ media_nfs_share }}"
     path: "{{ media_dir }}"
-    opts: "credentials=/etc/samba/credentials/media,uid=1000,gid=1000,iocharset=utf8,vers=3.0"
-    fstype: cifs
+    opts: "vers=4,rsize=65536,wsize=65536,hard,timeo=600,retrans=2,_netdev"
+    fstype: nfs
     state: mounted
 
 - name: Deploy .env file
