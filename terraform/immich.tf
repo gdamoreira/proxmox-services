@@ -2,7 +2,7 @@ resource "proxmox_lxc" "immich" {
   provider        = proxmox.secondary
   target_node     = var.proxmox_secondary_instance
   hostname        = "immich"
-  cores           = 4
+  cores           = 12
   memory          = 8192
   ostemplate      = "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
   unprivileged    = false
