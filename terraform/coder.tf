@@ -3,14 +3,15 @@ resource "proxmox_lxc" "coder" {
   target_node     = var.proxmox_secondary_instance
   hostname        = "coder"
   cores           = 4
-  memory          = 4096
-  ostemplate      = "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
-  unprivileged    = true
-  ostype          = "ubuntu"
-  ssh_public_keys = file(var.pub_ssh_key)
+  memory          = 2048
+  swap            = 512
+  ostemplate      = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
+  unprivileged    = false
+  ostype          = "debian"
   start           = true
   onboot          = true
   vmid            = var.coder_lxcid
+  tags            = "coding;debian;ide;os;vscode"
 
   features {
     nesting = true
@@ -18,7 +19,7 @@ resource "proxmox_lxc" "coder" {
 
   rootfs {
     storage = "local-lvm"
-    size    = "30G"
+    size    = "8G"
   }
 
   network {
@@ -32,7 +33,10 @@ resource "proxmox_lxc" "coder" {
 
   lifecycle {
     ignore_changes = [
-      mountpoint[0].storage
+      ostemplate,
+      description,
+      cmode,
+      mountpoint[0].storage,
     ]
   }
 }

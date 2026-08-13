@@ -161,12 +161,12 @@ variable "suwayomi_ip" {
 // coder
 variable "coder_lxcid" {
   type    = number
-  default = 506
+  default = 500
 }
 
 variable "coder_mac" {
   type    = string
-  default = "4C:9A:FD:27:51:BF"
+  default = "BC:24:11:6E:97:4E"
 }
 
 variable "coder_ip" {
