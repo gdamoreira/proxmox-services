@@ -131,10 +131,10 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 
 | Status | Service | Hostname | IP | Description | Subdomain | Location |
 | ------ | ------- | -------- | --- | ----------- | --------- | -------- |
-| ✅ | Plex | plex | 10.0.5.1 | Servidor de mídia | `plex.damoreira.ml` | |
+| ✅ | Plex | plex | 10.0.5.1 | Servidor de mídia | `plex.damoreira.ml` | Hypervisor 1 |
 | ✅ | Suwayomi | mangareader | 10.0.5.2 | Leitor de mangás | `mangareader.damoreira.ml` | Hypervisor 2 |
 | ✅ | Transmission | torrent | 10.0.5.3 | Cliente torrent (Transmission) | `torrent.damoreira.ml` | Hypervisor 1 |
-| | Ghost | ghost | 10.0.5.5 | Blog pessoal | `blog.damoreira.ml` | Hypervisor 1 |
+| ✅ | Ghost | ghost | 10.0.5.5 | Blog pessoal | `blog.damoreira.ml` | Hypervisor 1 |
 | ✅ | Immich | immich | 10.0.5.6 | Backup de fotos | `photos.damoreira.ml` | Hypervisor 1 |
 
 ### 💾 Storage & Development

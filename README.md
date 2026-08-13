@@ -17,8 +17,8 @@ Two-phase deployment:
 | Harbor | 10.0.20.4/16 | 501 | ✅ | Private container registry |
 | Kafka | 10.0.20.11/16 | 502 | ✅ | Event streaming |
 | Plex | 10.0.5.1/16 | 503 | ✅ | Media server + Docker stack |
-| Jellyfin | 10.0.5.4/16 | 504 | ❌ | Open-source media server |
-| Ghost | 10.0.5.5/16 | 510 | ❌ | Personal blog |
+| Jellyfin | 10.0.5.4/16 | 504 | ✅ | Open-source media server |
+| Ghost | 10.0.5.5/16 | 510 | ✅ | Personal blog |
 | Immich | 10.0.5.6/16 | 511 | ✅ | Photo/video backup |
 
 ### Full Topology
@@ -32,7 +32,7 @@ Two-phase deployment:
 | 10.0.0.7 | cf | Cloudflare Tunnel | Hypervisor 2 |
 | 10.0.0.8 | traefik | Traefik | Hypervisor 2 |
 | 10.0.0.9 | kuma | Uptime Kuma | Hypervisor 2 |
-| 10.0.5.1 | plex | Plex + Media Stack | |
+| 10.0.5.1 | plex | Plex + Media Stack | Hypervisor 1 |
 | 10.0.5.2 | mangareader | Suwayomi | Hypervisor 2 |
 | 10.0.5.3 | torrent | Transmission | Hypervisor 1 |
 | 10.0.5.4 | jellyfin | Jellyfin | Hypervisor 1 |
@@ -42,15 +42,15 @@ Two-phase deployment:
 | 10.0.10.2 | coder | Coder IDE | Hypervisor 1 |
 | 10.0.20.1 | docker | Docker host | |
 | 10.0.20.2 | heimdall | Heimdall dashboard | |
-| 10.0.20.3 | gitlab | GitLab | |
-| 10.0.20.4 | harbor | Harbor | |
+| 10.0.20.3 | gitlab | GitLab | Hypervisor 1 |
+| 10.0.20.4 | harbor | Harbor | Hypervisor 1 |
 | 10.0.20.5 | nexus | Nexus | |
 | 10.0.20.6 | teamcity | TeamCity | |
 | 10.0.20.7 | trillium | Trillium Notes | |
 | 10.0.20.8 | mongo | MongoDB | |
 | 10.0.20.9 | postgres | PostgreSQL | |
 | 10.0.20.10 | redis | Redis | |
-| 10.0.20.11 | kafka | Kafka | |
+| 10.0.20.11 | kafka | Kafka | Hypervisor 1 |
 | 10.0.20.12 | axon | Axon Server | |
 
 ## Terraform
