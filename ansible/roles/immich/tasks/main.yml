@@ -63,6 +63,61 @@
     state: directory
     mode: "0755"
 
+- name: Create immich assets directory
+  ansible.builtin.file:
+    path: "{{ immich_data_dir }}/assets"
+    state: directory
+    mode: "0755"
+
+- name: Copy custom logo to assets
+  ansible.builtin.copy:
+    src: "{{ role_path }}/templates/damoreira-logo.png"
+    dest: "{{ immich_data_dir }}/assets/damoreira-logo.png"
+    mode: "0644"
+
+- name: Copy custom logo SVG to assets
+  ansible.builtin.copy:
+    src: "{{ role_path }}/templates/logo.svg"
+    dest: "{{ immich_data_dir }}/assets/logo.svg"
+    mode: "0644"
+
+- name: Copy custom logo SVG brotli to assets
+  ansible.builtin.copy:
+    src: "{{ role_path }}/templates/logo.svg.br"
+    dest: "{{ immich_data_dir }}/assets/logo.svg.br"
+    mode: "0644"
+
+- name: Copy custom logo SVG gzip to assets
+  ansible.builtin.copy:
+    src: "{{ role_path }}/templates/logo.svg.gz"
+    dest: "{{ immich_data_dir }}/assets/logo.svg.gz"
+    mode: "0644"
+
+- name: Copy custom favicon to assets
+  ansible.builtin.copy:
+    src: "{{ role_path }}/templates/favicon.png"
+    dest: "{{ immich_data_dir }}/assets/favicon.png"
+    mode: "0644"
+
+- name: Copy custom favicon ICO to assets
+  ansible.builtin.copy:
+    src: "{{ role_path }}/templates/favicon.ico"
+    dest: "{{ immich_data_dir }}/assets/favicon.ico"
+    mode: "0644"
+
+- name: Copy custom favicon variants to assets
+  ansible.builtin.copy:
+    src: "{{ role_path }}/templates/{{ item.src }}"
+    dest: "{{ immich_data_dir }}/assets/{{ item.dest }}"
+    mode: "0644"
+  loop:
+    - { src: favicon-16.png, dest: favicon-16.png }
+    - { src: favicon-32.png, dest: favicon-32.png }
+    - { src: favicon-48.png, dest: favicon-48.png }
+    - { src: favicon-96.png, dest: favicon-96.png }
+    - { src: favicon-144.png, dest: favicon-144.png }
+    - { src: apple-icon-180.png, dest: apple-icon-180.png }
+
 - name: Deploy docker-compose.yml
   ansible.builtin.template:
     src: docker-compose.yml.j2
@@ -81,3 +136,36 @@
     project_src: "{{ immich_data_dir }}"
     state: present
     pull: always
+
+- name: Override Immich logo assets with custom logo
+  ansible.builtin.shell:
+    cmd: |
+      for f in $(docker exec immich_server sh -c 'ls /build/www/_app/immutable/assets/immich-logo-*.svg' 2>/dev/null); do
+        docker cp {{ immich_data_dir }}/assets/logo.svg immich_server:"$f"
+      done
+      for f in $(docker exec immich_server sh -c 'ls /build/www/_app/immutable/assets/immich-logo-*.svg.br' 2>/dev/null); do
+        docker cp {{ immich_data_dir }}/assets/logo.svg.br immich_server:"$f"
+      done
+      for f in $(docker exec immich_server sh -c 'ls /build/www/_app/immutable/assets/immich-logo-*.svg.gz' 2>/dev/null); do
+        docker cp {{ immich_data_dir }}/assets/logo.svg.gz immich_server:"$f"
+      done
+    executable: /bin/bash
+  register: immich_logo_result
+  changed_when: immich_logo_result.rc == 0
+  ignore_errors: true
+  tags: logo
+
+- name: Override Immich favicon with custom favicon
+  ansible.builtin.shell:
+    cmd: |
+      docker cp {{ immich_data_dir }}/assets/favicon.png immich_server:/build/www/favicon.png
+      docker cp {{ immich_data_dir }}/assets/favicon.ico immich_server:/build/www/favicon.ico
+      for v in 16 32 48 96 144; do
+        docker cp {{ immich_data_dir }}/assets/favicon-$v.png immich_server:/build/www/favicon-$v.png
+      done
+      docker cp {{ immich_data_dir }}/assets/apple-icon-180.png immich_server:/build/www/apple-icon-180.png
+    executable: /bin/bash
+  register: immich_favicon_result
+  changed_when: immich_favicon_result.rc == 0
+  ignore_errors: true
+  tags: logo
