@@ -2,6 +2,7 @@
 - hosts: kuma
   vars_files:
     - "../roles/backup/vars/default.yml"
+    - "../roles/kuma/vars/default.yml"
   tasks:
     - name: Install NFS utils
       ansible.builtin.package:

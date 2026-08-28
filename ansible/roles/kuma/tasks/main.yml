@@ -59,3 +59,194 @@
     project_src: "{{ kuma_data_dir }}"
     state: present
     pull: always
+
+#
+# Auto-restore last valid backup on a fresh/recreated instance (no marker yet).
+# Selecting the "last working" backup: most recent archive that contains a
+# non-empty kuma.db, so empty/broken backups are never used.
+#
+- name: Auto-restore last valid kuma backup on fresh instance
+  when: kuma_auto_restore | bool
+  block:
+    - name: Check auto-restore marker
+      ansible.builtin.stat:
+        path: "{{ kuma_data_dir }}/data/.restored"
+      register: kuma_restore_marker
+
+    - name: Include backup config vars for auto-restore
+      ansible.builtin.include_vars: "../backup/vars/default.yml"
+      when: not kuma_restore_marker.stat.exists
+
+    - name: Mount backup NFS share for auto-restore
+      ansible.builtin.mount:
+        src: "{{ backup_nfs_server }}:{{ backup_nfs_share }}"
+        path: "{{ backup_mount }}"
+        opts: "{{ backup_nfs_opts }}"
+        fstype: nfs
+        state: mounted
+      when: not kuma_restore_marker.stat.exists
+
+    - name: Select last valid kuma backup
+      ansible.builtin.shell:
+        cmd: |
+          ls -1t {{ backup_mount }}/{{ backup_cifs_base }}/kuma/kuma-backup-*.tar.gz 2>/dev/null | while read -r f; do
+            sz=$(tar tvzf "$f" 2>/dev/null | awk '/kuma\.db$/ {print $3; exit}')
+            if [ -n "$sz" ] && [ "$sz" -gt 0 ]; then
+              echo "$f"
+              break
+            fi
+          done
+      register: kuma_auto_backup
+      when: not kuma_restore_marker.stat.exists
+
+    - name: Warn if no valid backup available for auto-restore
+      ansible.builtin.debug:
+        msg: "No valid (non-empty) kuma backup found on NFS share; skipping auto-restore"
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length == 0
+
+    - name: Stop kuma container for auto-restore
+      community.docker.docker_compose_v2:
+        project_src: "{{ kuma_data_dir }}"
+        state: stopped
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length > 0
+
+    - name: Save current data before auto-restore
+      ansible.builtin.shell:
+        cmd: "mv {{ kuma_data_dir }}/data {{ kuma_data_dir }}/data.old-{{ ansible_date_time.epoch }}"
+      ignore_errors: true
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length > 0
+
+    - name: Create fresh data directory for auto-restore
+      ansible.builtin.file:
+        path: "{{ kuma_data_dir }}/data"
+        state: directory
+        mode: "0755"
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length > 0
+
+    - name: Extract last valid kuma backup
+      ansible.builtin.unarchive:
+        src: "{{ kuma_auto_backup.stdout }}"
+        dest: "{{ kuma_data_dir }}/data"
+        remote_src: true
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length > 0
+
+    - name: Fix ownership of restored data
+      ansible.builtin.file:
+        path: "{{ kuma_data_dir }}/data"
+        owner: root
+        group: root
+        recurse: true
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length > 0
+
+    - name: Create auto-restore marker
+      ansible.builtin.file:
+        path: "{{ kuma_data_dir }}/data/.restored"
+        state: touch
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length > 0
+
+    - name: Start kuma container after auto-restore
+      community.docker.docker_compose_v2:
+        project_src: "{{ kuma_data_dir }}"
+        state: present
+      when:
+        - not kuma_restore_marker.stat.exists
+        - kuma_auto_backup.stdout | length > 0
+
+#
+# Restore tasks (run with --tags restore -e kuma_restore_date=YYYY-MM-DD)
+#
+- name: Include backup config vars for restore
+  ansible.builtin.include_vars: "../backup/vars/default.yml"
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Include kuma config vars for restore
+  ansible.builtin.include_vars: "vars/default.yml"
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Mount backup NFS share for restore
+  ansible.builtin.mount:
+    src: "{{ backup_nfs_server }}:{{ backup_nfs_share }}"
+    path: "{{ backup_mount }}"
+    opts: "{{ backup_nfs_opts }}"
+    fstype: nfs
+    state: mounted
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Find kuma backup file for restore date
+  ansible.builtin.find:
+    paths: "{{ backup_mount }}/{{ backup_cifs_base }}/kuma"
+    patterns: "kuma-backup-{{ kuma_restore_date }}-*.tar.gz"
+  register: kuma_backup_files
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Fail if no backup found for restore date
+  ansible.builtin.fail:
+    msg: "No kuma backup found for date {{ kuma_restore_date }} in {{ backup_mount }}/{{ backup_cifs_base }}/kuma"
+  when:
+    - kuma_restore_date | length > 0
+    - kuma_backup_files.files | length == 0
+  tags: [restore, never]
+
+- name: Stop kuma container for restore
+  community.docker.docker_compose_v2:
+    project_src: "{{ kuma_data_dir }}"
+    state: stopped
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Save current data before restore
+  ansible.builtin.shell:
+    cmd: "mv {{ kuma_data_dir }}/data {{ kuma_data_dir }}/data.old-{{ ansible_date_time.epoch }}"
+  ignore_errors: true
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Create fresh data directory
+  ansible.builtin.file:
+    path: "{{ kuma_data_dir }}/data"
+    state: directory
+    mode: "0755"
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Extract kuma backup into data directory
+  ansible.builtin.unarchive:
+    src: "{{ kuma_backup_files.files[0].path }}"
+    dest: "{{ kuma_data_dir }}/data"
+    remote_src: true
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Fix ownership of restored data
+  ansible.builtin.file:
+    path: "{{ kuma_data_dir }}/data"
+    owner: root
+    group: root
+    recurse: true
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]
+
+- name: Start kuma container after restore
+  community.docker.docker_compose_v2:
+    project_src: "{{ kuma_data_dir }}"
+    state: present
+  when: kuma_restore_date | length > 0
+  tags: [restore, never]

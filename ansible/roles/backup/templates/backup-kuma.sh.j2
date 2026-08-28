@@ -2,6 +2,7 @@
 set -euo pipefail
 
 BACKUP_BASE="{{ backup_mount }}/{{ backup_cifs_base }}/kuma"
+DATA_DIR="{{ kuma_data_dir }}/data"
 DATE=$(date +%Y-%m-%d-%H%M%S)
 TMPDIR=$(mktemp -d)
 
@@ -10,12 +11,18 @@ trap 'rm -rf "$TMPDIR"' EXIT
 echo "=== Kuma backup $DATE ==="
 
 echo "Copying database..."
-cp /opt/uptime-kuma/data/kuma.db "$TMPDIR/" 2>/dev/null || true
-cp /opt/uptime-kuma/data/kuma.db-shm "$TMPDIR/" 2>/dev/null || true
-cp /opt/uptime-kuma/data/kuma.db-wal "$TMPDIR/" 2>/dev/null || true
+cp "$DATA_DIR/kuma.db" "$TMPDIR/" 2>/dev/null || true
+cp "$DATA_DIR/kuma.db-shm" "$TMPDIR/" 2>/dev/null || true
+cp "$DATA_DIR/kuma.db-wal" "$TMPDIR/" 2>/dev/null || true
+
+# Never produce a broken/empty archive that could be mistaken for a valid backup
+if [ ! -s "$TMPDIR/kuma.db" ]; then
+  echo "ERROR: $DATA_DIR/kuma.db is missing or empty, aborting backup" >&2
+  exit 1
+fi
 
 echo "Copying screenshots..."
-cp -r /opt/uptime-kuma/data/screenshots "$TMPDIR/" 2>/dev/null || true
+cp -r "$DATA_DIR/screenshots" "$TMPDIR/" 2>/dev/null || true
 
 echo "Creating archive..."
 mkdir -p "$BACKUP_BASE"

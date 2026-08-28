@@ -1,3 +1,5 @@
 kuma_data_dir: "/srv/kuma"
 kuma_port: 3001
 timezone: "Europe/Madrid"
+kuma_restore_date: ""
+kuma_auto_restore: true
