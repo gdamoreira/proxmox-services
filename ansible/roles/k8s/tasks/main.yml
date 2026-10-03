@@ -1,0 +1,32 @@
+---
+- name: Include OS and kernel prerequisites
+  ansible.builtin.include_tasks: prereqs.yml
+  tags:
+    - k8s
+    - k8s_prereqs
+
+- name: Include containerd installation and configuration
+  ansible.builtin.include_tasks: containerd.yml
+  tags:
+    - k8s
+    - k8s_containerd
+
+- name: Include Kubernetes package installation
+  ansible.builtin.include_tasks: packages.yml
+  tags:
+    - k8s
+    - k8s_packages
+
+- name: Include control plane initialization
+  ansible.builtin.include_tasks: control_plane.yml
+  when: inventory_hostname in groups['k8s_control_plane']
+  tags:
+    - k8s
+    - k8s_control_plane
+
+- name: Include worker node join
+  ansible.builtin.include_tasks: worker.yml
+  when: inventory_hostname in groups['k8s_workers']
+  tags:
+    - k8s
+    - k8s_workers

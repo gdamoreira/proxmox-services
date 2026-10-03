@@ -1,0 +1,17 @@
+---
+- name: Check if worker node has already joined the cluster
+  ansible.builtin.stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: k8s_worker_kubelet_conf
+
+- name: Join worker node to the Kubernetes cluster
+  ansible.builtin.command: "{{ k8s_join_command }}"
+  when: not k8s_worker_kubelet_conf.stat.exists and k8s_join_command is defined
+  register: worker_join_result
+  changed_when: true
+
+- name: Ensure kubelet is running and enabled on worker
+  ansible.builtin.systemd:
+    name: kubelet
+    state: started
+    enabled: true

@@ -1,0 +1,58 @@
+---
+- name: Ensure keyrings directory exists
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Docker official GPG key for containerd
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.asc
+    mode: '0644'
+    force: false
+
+- name: Add Docker repository for containerd
+  ansible.builtin.apt_repository:
+    repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker
+
+- name: Install containerd.io
+  ansible.builtin.apt:
+    name: containerd.io
+    state: present
+    update_cache: true
+
+- name: Ensure /etc/containerd directory exists
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: '0755'
+
+- name: Check if containerd config exists
+  ansible.builtin.stat:
+    path: /etc/containerd/config.toml
+  register: containerd_config_stat
+
+- name: Generate default containerd config
+  ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
+  when: not containerd_config_stat.stat.exists or containerd_config_stat.stat.size == 0
+  changed_when: true
+  notify: Restart containerd
+
+- name: Configure SystemdCgroup for containerd
+  ansible.builtin.replace:
+    path: /etc/containerd/config.toml
+    regexp: 'SystemdCgroup = false'
+    replace: 'SystemdCgroup = true'
+  notify: Restart containerd
+
+- name: Flush handlers to ensure containerd is restarted if config changed
+  ansible.builtin.meta: flush_handlers
+
+- name: Ensure containerd service is running and enabled
+  ansible.builtin.systemd:
+    name: containerd
+    state: started
+    enabled: true

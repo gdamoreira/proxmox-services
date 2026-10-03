@@ -11,3 +11,4 @@
 - import_playbook: ./playbooks/jellyfin.yml
 - import_playbook: ./playbooks/ghost.yml
 - import_playbook: ./playbooks/immich.yml
+- import_playbook: ./playbooks/k8s.yml

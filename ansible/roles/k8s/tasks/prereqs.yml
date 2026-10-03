@@ -1,0 +1,53 @@
+---
+- name: Disable swap immediately
+  ansible.builtin.command: swapoff -a
+  when: ansible_swaptotal_mb > 0
+  changed_when: true
+
+- name: Disable swap permanently in /etc/fstab
+  ansible.builtin.replace:
+    path: /etc/fstab
+    regexp: '^(\s*[^#\n]+\s+none\s+swap\s+.*)$'
+    replace: '# \1'
+
+- name: Configure kernel modules for Kubernetes
+  ansible.builtin.copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+    mode: '0644'
+
+- name: Load overlay kernel module
+  community.general.modprobe:
+    name: overlay
+    state: present
+
+- name: Load br_netfilter kernel module
+  community.general.modprobe:
+    name: br_netfilter
+    state: present
+
+- name: Configure sysctl parameters for Kubernetes networking
+  ansible.builtin.copy:
+    dest: /etc/sysctl.d/99-k8s.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.ipv4.ip_forward                 = 1
+    mode: '0644'
+
+- name: Apply sysctl params
+  ansible.builtin.command: sysctl --system
+  changed_when: false
+
+- name: Install prerequisite packages
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+    update_cache: true

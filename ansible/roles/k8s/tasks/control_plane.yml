@@ -1,0 +1,77 @@
+---
+- name: Check if Kubernetes control plane is already initialized
+  ansible.builtin.stat:
+    path: /etc/kubernetes/admin.conf
+  register: k8s_admin_conf
+
+- name: Initialize Kubernetes cluster with kubeadm
+  ansible.builtin.command: >
+    kubeadm init
+    --pod-network-cidr={{ k8s_pod_network_cidr }}
+    --apiserver-advertise-address={{ k8s_apiserver_advertise_address }}
+    --node-name={{ k8s_control_plane_node_name }}
+  when: not k8s_admin_conf.stat.exists
+  register: kubeadm_init_output
+  changed_when: true
+
+- name: Ensure /root/.kube directory exists
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    mode: '0700'
+
+- name: Copy admin.conf to root kubeconfig
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    remote_src: true
+    mode: '0600'
+
+- name: Install Flannel CNI plugin
+  ansible.builtin.command: kubectl apply -f {{ flannel_manifest_url }}
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: flannel_install
+  changed_when: "'created' in flannel_install.stdout or 'configured' in flannel_install.stdout"
+
+- name: Deploy Ingress-NGINX controller
+  ansible.builtin.command: kubectl apply -f {{ ingress_nginx_manifest_url }}
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: ingress_nginx_install
+  changed_when: "'created' in ingress_nginx_install.stdout or 'configured' in ingress_nginx_install.stdout"
+
+- name: Patch Ingress-NGINX service with fixed NodePorts (30080 and 30443)
+  ansible.builtin.shell: >
+    kubectl patch svc ingress-nginx-controller -n ingress-nginx --type='strategic'
+    -p '{"spec":{"type":"NodePort","ports":[{"name":"http","port":80,"targetPort":"http","nodePort":{{ ingress_nginx_nodeport_http }}},{"name":"https","port":443,"targetPort":"https","nodePort":{{ ingress_nginx_nodeport_https }}}]}}'
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  register: patch_ingress_nodeport
+  changed_when: "'patched' in patch_ingress_nodeport.stdout"
+
+- name: Generate fresh worker join command
+  ansible.builtin.command: kubeadm token create --print-join-command
+  register: join_cmd_raw
+  changed_when: false
+
+- name: Distribute join command as host fact
+  ansible.builtin.set_fact:
+    k8s_join_command: "{{ join_cmd_raw.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['k8s_workers'] }}"
+
+- name: Ensure local artifacts directory exists on controller
+  ansible.builtin.file:
+    path: "{{ playbook_dir }}/../artifacts"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  run_once: true
+
+- name: Fetch kubeconfig to Ansible controller
+  ansible.builtin.fetch:
+    src: /etc/kubernetes/admin.conf
+    dest: "{{ playbook_dir }}/{{ k8s_kubeconfig_local_dest }}"
+    flat: true
