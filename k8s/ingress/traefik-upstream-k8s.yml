@@ -1,0 +1,12 @@
+---
+http:
+  routers:
+    k8s-wildcard-router:
+      rule: HostRegexp(`{subdomain:[a-z0-9-]+}.k8s.damoreira.ml`)
+      service: k8s-cluster-service
+  services:
+    k8s-cluster-service:
+      loadBalancer:
+        servers:
+          - url: http://10.0.20.42:30080
+          - url: http://10.0.20.43:30080
