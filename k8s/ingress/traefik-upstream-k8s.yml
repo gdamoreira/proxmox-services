@@ -2,7 +2,7 @@
 http:
   routers:
     k8s-wildcard-router:
-      rule: HostRegexp(`{subdomain:[a-z0-9-]+}.k8s.damoreira.ml`)
+      rule: HostRegexp(`{subdomain:[a-z0-9-]+}.apps.damoreira.ml`) || HostRegexp(`{subdomain:[a-z0-9-]+}.k8s.damoreira.ml`)
       service: k8s-cluster-service
   services:
     k8s-cluster-service:

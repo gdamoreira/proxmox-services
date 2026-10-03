@@ -8,6 +8,16 @@ metadata:
 spec:
   ingressClassName: nginx
   rules:
+    - host: demo.apps.damoreira.ml
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: demo-app
+                port:
+                  number: 80
     - host: demo.k8s.damoreira.ml
       http:
         paths:
