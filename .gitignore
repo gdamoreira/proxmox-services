@@ -5,3 +5,5 @@
 terraform/*.tfstate
 terraform/*.tfstate.*
 .idea/
+artifacts/
+ansible/artifacts/
