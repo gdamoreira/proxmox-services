@@ -269,3 +269,49 @@ variable "immich_ip" {
   type    = string
   default = "10.0.5.6/16"
 }
+
+// kubernetes
+variable "k8s_node_01_vmid" {
+  type    = number
+  default = 601
+}
+
+variable "k8s_node_01_mac" {
+  type    = string
+  default = "BC:24:11:41:00:01"
+}
+
+variable "k8s_node_01_ip" {
+  type    = string
+  default = "10.0.20.41/16"
+}
+
+variable "k8s_node_02_vmid" {
+  type    = number
+  default = 602
+}
+
+variable "k8s_node_02_mac" {
+  type    = string
+  default = "BC:24:11:42:00:02"
+}
+
+variable "k8s_node_02_ip" {
+  type    = string
+  default = "10.0.20.42/16"
+}
+
+variable "k8s_node_03_vmid" {
+  type    = number
+  default = 603
+}
+
+variable "k8s_node_03_mac" {
+  type    = string
+  default = "BC:24:11:43:00:03"
+}
+
+variable "k8s_node_03_ip" {
+  type    = string
+  default = "10.0.20.43/16"
+}
