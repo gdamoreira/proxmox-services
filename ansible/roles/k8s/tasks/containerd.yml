@@ -35,9 +35,15 @@
     path: /etc/containerd/config.toml
   register: containerd_config_stat
 
-- name: Generate default containerd config
+- name: Check if CRI plugin is disabled in containerd config
+  ansible.builtin.command: grep -q 'disabled_plugins = \["cri"\]' /etc/containerd/config.toml
+  register: cri_disabled
+  failed_when: false
+  changed_when: false
+
+- name: Generate default containerd config with CRI enabled
   ansible.builtin.shell: containerd config default > /etc/containerd/config.toml
-  when: not containerd_config_stat.stat.exists or containerd_config_stat.stat.size == 0
+  when: cri_disabled.rc == 0 or not containerd_config_stat.stat.exists or containerd_config_stat.stat.size == 0
   changed_when: true
   notify: Restart containerd
 
@@ -47,6 +53,7 @@
     regexp: 'SystemdCgroup = false'
     replace: 'SystemdCgroup = true'
   notify: Restart containerd
+
 
 - name: Flush handlers to ensure containerd is restarted if config changed
   ansible.builtin.meta: flush_handlers

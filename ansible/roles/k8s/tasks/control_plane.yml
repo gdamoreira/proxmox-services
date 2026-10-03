@@ -50,6 +50,13 @@
   register: patch_ingress_nodeport
   changed_when: "'patched' in patch_ingress_nodeport.stdout"
 
+- name: Remove blocking validating webhook configuration for baremetal ingress-nginx
+  ansible.builtin.command: kubectl delete -A ValidatingWebhookConfiguration ingress-nginx-admission --ignore-not-found
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  changed_when: false
+
+
 - name: Generate fresh worker join command
   ansible.builtin.command: kubeadm token create --print-join-command
   register: join_cmd_raw

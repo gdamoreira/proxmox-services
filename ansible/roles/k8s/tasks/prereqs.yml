@@ -49,5 +49,20 @@
       - curl
       - gnupg
       - lsb-release
+      - conntrack
+      - socat
+      - ipset
+      - ebtables
     state: present
     update_cache: true
+
+
+- name: Ensure cluster nodes are in /etc/hosts
+  ansible.builtin.blockinfile:
+    path: /etc/hosts
+    block: |
+      10.0.20.41 k8s-node-01
+      10.0.20.42 k8s-node-02
+      10.0.20.43 k8s-node-03
+    marker: "# {mark} ANSIBLE MANAGED K8S HOSTS"
+
