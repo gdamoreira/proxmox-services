@@ -20,6 +20,8 @@ Two-phase deployment:
 | Jellyfin | 10.0.5.4/16 | 504 | ✅ | Open-source media server |
 | Ghost | 10.0.5.5/16 | 510 | ✅ | Personal blog |
 | Immich | 10.0.5.6/16 | 511 | ✅ | Photo/video backup |
+| K8s Cluster (3 nodes) | 10.0.20.4{1,2,3}/16 | 601-603 (VM) | ✅ | Kubernetes v1.31 (kubeadm + containerd) |
+
 
 ### Full Topology
 
@@ -52,6 +54,10 @@ Two-phase deployment:
 | 10.0.20.10 | redis | Redis | |
 | 10.0.20.11 | kafka | Kafka | Hypervisor 1 |
 | 10.0.20.12 | axon | Axon Server | |
+| 10.0.20.41 | k8s-node-01 | K8s Control Plane | Hypervisor 1 |
+| 10.0.20.42 | k8s-node-02 | K8s Worker 1 | Hypervisor 1 |
+| 10.0.20.43 | k8s-node-03 | K8s Worker 2 | Hypervisor 1 |
+
 
 ## Terraform
 
@@ -79,7 +85,9 @@ ansible-playbook ./playbooks/traefik.yml
 ansible-playbook ./playbooks/harbor.yml
 ansible-playbook ./playbooks/kafka.yml
 ansible-playbook ./playbooks/plex.yml
+ansible-playbook ./playbooks/k8s.yml
 ```
+
 
 Or run all:
 
@@ -115,7 +123,31 @@ Before first run, obtain a Plex claim token:
 ansible-playbook ./playbooks/plex.yml -e plex_claim_token=claim-xxxx
 ```
 
+## Kubernetes Cluster
+
+Upstream Kubernetes v1.31 cluster with 3 QEMU virtual machines on Hypervisor 1:
+- `k8s-node-01` (10.0.20.41) — Control plane (kubeadm, etcd, Flannel CNI, Ingress-NGINX)
+- `k8s-node-02` (10.0.20.42) — Worker node
+- `k8s-node-03` (10.0.20.43) — Worker node
+
+### Deploying & Managing Cluster Applications
+
+The `k8s/` folder provides manifest templates and an operational Makefile:
+
+```bash
+cd k8s
+make kubeconfig                       # Setup ~/.kube/config-homelab
+make deploy APP=demo-app              # Deploy application
+make update APP=demo-app IMAGE=...    # Rolling update
+make status APP=demo-app              # Inspect pods, service, ingress
+make logs APP=demo-app                # Stream pod logs
+make delete APP=demo-app              # Clean teardown
+```
+
+Detailed cluster setup, networking, and day-2 operations are documented in [`../homelab/docs/core-services/kubernetes.md`](../homelab/docs/core-services/kubernetes.md).
+
 ## Cloudflare Tunnel
+
 
 All external traffic enters through a Cloudflare Tunnel running on `10.0.0.7` (token-based). The tunnel forwards `https://<hostname>.damoreira.ml` to Traefik at `10.0.0.8:443`.
 
@@ -178,7 +210,8 @@ echo '{
 │   ├── suwayomi.tf          # Suwayomi LXC
 │   ├── jellyfin.tf          # Jellyfin LXC
 │   ├── ghost.tf             # Ghost LXC
-│   └── immich.tf            # Immich LXC
+│   ├── immich.tf            # Immich LXC
+│   └── kubernetes.tf        # Kubernetes QEMU VMs (3 nodes)
 │
 ├── ansible/
 │   ├── ansible.cfg
@@ -195,7 +228,8 @@ echo '{
 │   │   ├── suwayomi.yml
 │   │   ├── jellyfin.yml
 │   │   ├── ghost.yml
-│   │   └── immich.yml
+│   │   ├── immich.yml
+│   │   └── k8s.yml
 │   ├── roles/
 │   │   ├── common/          # OS upgrades + base packages
 │   │   ├── traefik/         # Traefik binary + config
@@ -205,9 +239,17 @@ echo '{
 │   │   ├── jellyfin/        # Jellyfin Docker Compose
 │   │   ├── ghost/           # Ghost Docker Compose
 │   │   ├── immich/          # Immich Docker Compose
-│   │   ├── backup/          # NFSv4 backup systemd timer
+│   │   ├── k8s/             # Kubernetes v1.31 (kubeadm + containerd + Flannel)
+│   │   └── backup/          # NFSv4 backup systemd timer
 │   └── host_vars/
+│
+├── k8s/                     # Kubernetes app manifests & developer CLI
+│   ├── Makefile             # CLI helper (deploy, update, logs, status)
+│   ├── ingress/             # Ingress-NGINX NodePort & Traefik upstream route
+│   ├── templates/           # Application scaffolding templates
+│   └── apps/                # Homelab microservices (demo-app)
 │
 ├── AI.md                    # Project intelligence & roadmap
 └── README.md
+
 ```

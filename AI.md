@@ -23,6 +23,10 @@ Currently defined service configs (Terraform + Ansible):
 | GitLab | 10.0.20.3/16 | 509 (LXC, keep) | secondary (R820) | DevOps platform (VM, not LXC yet) |
 | Ghost | 10.0.5.5/16 | 510 | secondary (R820) | Personal blog |
 | Immich | 10.0.5.6/16 | 511 | secondary (R820) | Photo/video backup |
+| K8s Control Plane (k8s-node-01) | 10.0.20.41/16 | 601 (VM) | secondary (R820) | Kubernetes Control Plane (kubeadm) |
+| K8s Worker 1 (k8s-node-02) | 10.0.20.42/16 | 602 (VM) | secondary (R820) | Kubernetes Worker Node |
+| K8s Worker 2 (k8s-node-03) | 10.0.20.43/16 | 603 (VM) | secondary (R820) | Kubernetes Worker Node |
+
 
 Traefik acts as the ingress layer, routing to services on the private network via file-based config. The domain `damoreira.ml` is used for external access with Let's Encrypt ACME certificates.
 
@@ -160,6 +164,15 @@ tls: failed to verify certificate: x509: cannot validate certificate for 10.0.0.
 | | Redis | redis | 10.0.20.10 | Cache e filas pub/sub | `redis.damoreira.ml` | |
 | | Kafka | kafka | 10.0.20.11 | Plataforma de mensageria | `kafka.damoreira.ml` | |
 | | Axon Server | axon | 10.0.20.12 | Event store para microsserviços | `axon.damoreira.ml` | |
+
+### ☸️ Kubernetes Cluster (10.0.20.4x)
+
+| Status | Service | Hostname | IP | Description | Subdomain | Location |
+| ------ | ------- | -------- | --- | ----------- | --------- | -------- |
+| ✅ | K8s Control Plane | k8s-node-01 | 10.0.20.41 | Nó Master / kube-apiserver / etcd | `*.k8s.damoreira.ml` | Hypervisor 1 |
+| ✅ | K8s Worker 1 | k8s-node-02 | 10.0.20.42 | Nó de execução de workloads | `*.k8s.damoreira.ml` | Hypervisor 1 |
+| ✅ | K8s Worker 2 | k8s-node-03 | 10.0.20.43 | Nó de execução de workloads | `*.k8s.damoreira.ml` | Hypervisor 1 |
+
 
 ---
 
