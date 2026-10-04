@@ -27,7 +27,6 @@ IDRAC_PASS="calvin"
 # Value is the hex byte used by `raw 0x30 0x30 0x02 0xff 0xXX`.
 FAN_MAP=(
     "80:0x46"   # >80C   -> 70%  (0x46)
-    "70:0x1e"   # >70C   -> 30%  (0x1e)
     "60:0x0f"   # >60C   -> 15%  (0x0f)
     "50:0x0a"   # >50C   -> 10%  (0x0a)
     "0:0x07"    # <=50C  -> 7%   (0x07)
