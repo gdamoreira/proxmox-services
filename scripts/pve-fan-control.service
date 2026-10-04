@@ -1,0 +1,7 @@
+[Unit]
+Description=Control Dell PowerEdge fan speed based on iDRAC temperature
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/pve-fan-control.sh run
