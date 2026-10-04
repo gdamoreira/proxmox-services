@@ -1,0 +1,30 @@
+---
+# Fix git+ssh on the GitLab host by routing Git authentication through
+# gitlab-shell while keeping OpenSSH (port 22) for OS/root access.
+- hosts: gitlab
+  gather_facts: false
+  become: true
+  tasks:
+    - name: Ensure gitlab-shell AuthorizedKeysCommand in sshd_config
+      ansible.builtin.blockinfile:
+        path: /etc/ssh/sshd_config
+        marker: "# {mark} ANSIBLE GITLAB SSH"
+        block: |
+          AuthorizedKeysCommand /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-shell-authorized-keys-check %u %u %k
+          AuthorizedKeysCommandUser git
+
+    - name: Set git user shell to gitlab-shell
+      ansible.builtin.user:
+        name: git
+        shell: /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-shell
+
+    - name: Validate sshd_config
+      ansible.builtin.command: sshd -t
+      register: sshd_test
+      changed_when: false
+      failed_when: sshd_test.rc != 0
+
+    - name: Restart sshd
+      ansible.builtin.systemd:
+        name: ssh
+        state: restarted
