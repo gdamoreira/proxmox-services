@@ -22,7 +22,7 @@ Current services defined in `terraform/`:
 | Kuma | 504 | 10.0.0.9 | ✅ kuma.tf | ✅ | ✅ essentials/kuma.md |
 | Mangareader | 505 | 10.0.5.2 | ✅ suwayomi.tf | ✅ | ✅ utilities/suwayomi.md |
 | Coder | 506 | 10.0.10.2 | ✅ coder.tf | ✅ | ✅ utilities/coder.md |
-| Pihole | 507 | 10.0.0.3 | ✅ pihole.tf | pending | ❌ |
+| Pihole | 507 | 10.0.0.3 | ✅ pihole.tf | ✅ | ✅ essentials/pihole.md |
 | SSO (Keycloak) | 508 | 10.0.0.5 | ✅ sso.tf | pending | ✅ essentials/keycloak.md |
 | GitLab | 509 | 10.0.20.3 | ✅ gitlab.tf | pending | ✅ core-services/gitlab.md |
 

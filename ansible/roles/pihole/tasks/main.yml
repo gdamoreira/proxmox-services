@@ -1,6 +1,6 @@
 ---
 - name: Include config vars
-  ansible.builtin.include_vars: "vars/default.yml"
+  ansible.builtin.include_vars: vars/default.yml
 
 - name: Upgrade dependencies
   ansible.builtin.apt:
@@ -10,54 +10,68 @@
 - name: Install required system packages
   ansible.builtin.apt:
     pkg:
-      - apt-transport-https
-      - ca-certificates
       - curl
-      - software-properties-common
+      - ca-certificates
+      - git
+      - iputils-ping
+      - net-tools
     state: latest
 
-- name: Add Docker GPG key
-  ansible.builtin.apt_key:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    state: present
+- name: Stop and disable systemd-resolved (conflicts with FTL on port 53)
+  ansible.builtin.systemd:
+    name: systemd-resolved
+    state: stopped
+    enabled: false
 
-- name: Add Docker repository
-  ansible.builtin.apt_repository:
-    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
-    state: present
-
-- name: Install Docker packages
-  ansible.builtin.apt:
-    pkg:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-compose-plugin
-    state: latest
-    update_cache: true
-
-- name: Install Docker SDK for Python
-  ansible.builtin.pip:
-    name: docker
-
-- name: Create pihole directories
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
+- name: Download Pi-hole installer
+  ansible.builtin.get_url:
+    url: https://install.pi-hole.net
+    dest: /tmp/basic-install.sh
     mode: "0755"
-  loop:
-    - "{{ pihole_data_dir }}"
-    - "{{ pihole_data_dir }}/etc-pihole"
-    - "{{ pihole_data_dir }}/etc-dnsmasq.d"
+    timeout: 120
 
-- name: Deploy docker-compose.yml
-  ansible.builtin.template:
-    src: docker-compose.yml.j2
-    dest: "{{ pihole_data_dir }}/docker-compose.yml"
-    mode: "0644"
+- name: Create dialog shim to auto-accept installer prompts
+  ansible.builtin.copy:
+    dest: /usr/local/sbin/dialog
+    content: |
+      #!/bin/sh
+      # Shim: the Pi-hole installer forces interactive dialogs even with
+      # --unattended. Return success so the install proceeds headless.
+      exit 0
+    mode: "0755"
 
-- name: Ensure pihole is running
-  community.docker.docker_compose_v2:
-    project_src: "{{ pihole_data_dir }}"
-    state: present
-    pull: always
+- name: Run Pi-hole unattended installer
+  ansible.builtin.shell:
+    cmd: |
+      export PATH=/usr/local/sbin:$PATH
+      PIHOLE_INTERFACE={{ pihole_interface }} \
+      QUERY_LOGGING=true \
+      BLOCKING_ENABLED=true \
+      INSTALL_WEB_SERVER=true \
+      INSTALL_WEB_INTERFACE=true \
+      bash /tmp/basic-install.sh --unattended
+  args:
+    creates: /usr/local/bin/pihole
+  register: pihole_install
+  changed_when: pihole_install.rc == 0
+
+- name: Set Pi-hole web password
+  ansible.builtin.command: "pihole -a -p {{ pihole_password }}"
+  changed_when: false
+
+- name: Set Pi-hole timezone
+  ansible.builtin.command: "pihole -a -t {{ timezone }}"
+  changed_when: false
+
+- name: Set Pi-hole upstream DNS in pihole.toml
+  ansible.builtin.replace:
+    path: /etc/pihole/pihole.toml
+    regexp: '^(\s*upstreams = )\[.*\]'
+    replace: '\1["{{ pihole_dns }}"]'
+  notify: Restart Pi-hole FTL
+
+- name: Ensure Pi-hole FTL is running (serves DNS + web UI)
+  ansible.builtin.systemd:
+    name: pihole-FTL
+    state: restarted
+    enabled: true

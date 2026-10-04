@@ -1,11 +1,6 @@
 ---
-- name: Restart Docker
+- name: Restart Pi-hole FTL
   ansible.builtin.systemd:
-    name: docker
+    name: pihole-FTL
     state: restarted
     daemon_reload: true
-
-- name: Restart Pihole
-  community.docker.docker_compose_v2:
-    project_src: "{{ pihole_data_dir }}"
-    state: restarted
