@@ -1,0 +1,3 @@
+{% for rec in pihole_local_dns %}
+address=/{{ rec.domain }}/{{ rec.ip }}
+{% endfor %}

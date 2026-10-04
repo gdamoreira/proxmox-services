@@ -70,6 +70,20 @@
     replace: '\1["{{ pihole_dns }}"]'
   notify: Restart Pi-hole FTL
 
+- name: Enable loading dnsmasq config from /etc/dnsmasq.d/
+  ansible.builtin.replace:
+    path: /etc/pihole/pihole.toml
+    regexp: '^  etc_dnsmasq_d = false'
+    replace: '  etc_dnsmasq_d = true'
+  notify: Restart Pi-hole FTL
+
+- name: Configure local wildcard DNS records
+  ansible.builtin.template:
+    src: dnsmasq-local.conf.j2
+    dest: /etc/dnsmasq.d/02-local-dns.conf
+    mode: "0644"
+  notify: Restart Pi-hole FTL
+
 - name: Ensure Pi-hole FTL is running (serves DNS + web UI)
   ansible.builtin.systemd:
     name: pihole-FTL
