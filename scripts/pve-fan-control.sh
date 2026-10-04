@@ -26,7 +26,7 @@ IDRAC_PASS="calvin"
 # Temperature -> fan speed (%) mapping, checked top-down (hottest first).
 # Value is the hex byte used by `raw 0x30 0x30 0x02 0xff 0xXX`.
 FAN_MAP=(
-    "85:0x46"   # >85C   -> 70%  (0x46)
+    "85:0x1e"   # >85C   -> 30%  (0x1e)
     "70:0x0f"   # >70C   -> 15%  (0x0f)
     "60:0x0a"   # >60C   -> 10%  (0x0a)
     "0:0x07"    # <=60C  -> 7%   (0x07)
