@@ -40,6 +40,23 @@ fetch_temps() {
         }'
 }
 
+fetch_fans() {
+    ipmi sensor list | awk -F'|' '
+        {
+            gsub(/^ +| +$/, "", $1)
+            if ($1 ~ /^Fan[0-9]+$/) {
+                gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $4)
+                if ($2 ~ /[0-9]/) printf "%s|%s|%s|%s\n", $1, $2+0, $3, $4
+            }
+        }'
+}
+
+fetch_set_speed() {
+    local hex
+    hex="$(cat "${STATE_FILE:-/var/tmp/pve-fan-control.state}" 2>/dev/null || true)"
+    [[ -n "$hex" ]] && printf '%d%%' "$(( 16#${hex#0x} ))"
+}
+
 print_temps() {
     printf '%s%-30s %8s  %-12s  %s%s\n' "$BOLD" "Sensor" "Value" "Unit" "Status" "$RESET"
     printf '%s\n' "---------------------------------------------------------------"
@@ -50,6 +67,17 @@ print_temps() {
     done < <(fetch_temps | sort -t'|' -k2,2nr)
 }
 
+print_fans() {
+    local set_speed
+    set_speed="$(fetch_set_speed)"
+    printf '\n%sFan Speed  %s(set: %s)%s\n' "$BOLD" "$RESET" "${set_speed:-unknown}" "$RESET"
+    printf '%s\n' "---------------------------------------------------------------"
+    while IFS='|' read -r name val unit status; do
+        [[ -z "$name" ]] && continue
+        printf '%s%-30s %8.0f  %-12s  %s\n' "$RESET" "$name" "$val" "$unit" "$status"
+    done < <(fetch_fans | sort -t'|' -k1,1)
+}
+
 case "${1:-}" in
     -w)
         clear
@@ -57,11 +85,13 @@ case "${1:-}" in
             tput cup 0 0
             printf '%s%s  %s  %s%s\n' "$BOLD" "iDRAC $IDRAC_IP" "$(date '+%H:%M:%S')" "(refresh 2s)" "$RESET"
             print_temps
+            print_fans
             sleep 2
         done
         ;;
     "")
         print_temps
+        print_fans
         ;;
     *)
         echo "Usage: $0 [-w]" >&2
