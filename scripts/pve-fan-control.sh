@@ -28,9 +28,9 @@ IDRAC_PASS="calvin"
 FAN_MAP=(
     "80:0x46"   # >80C   -> 70%  (0x46)
     "70:0x32"   # >70C   -> 50%  (0x32)
-    "60:0x1e"   # >60C   -> 30%  (0x1e)
-    "50:0x14"   # >50C   -> 20%  (0x14)
-    "0:0x0a"    # <=50C  -> 10%  (0x0a)
+    "60:0x19"   # >60C   -> 25%  (0x19)
+    "50:0x0f"   # >50C   -> 15%  (0x0f)
+    "0:0x07"    # <=50C  -> 7%   (0x07)
 )
 
 # Sensor names to try, in order (case-sensitive as reported by iDRAC).
