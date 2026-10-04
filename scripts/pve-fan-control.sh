@@ -34,8 +34,6 @@ FAN_MAP=(
 )
 
 # Sensor names to try, in order (case-sensitive as reported by iDRAC).
-SENSOR_NAMES=("Temp" "Ambient Temp" "System Board Inlet Temp")
-
 # State file storing the last applied fan hex so we only re-send on change.
 STATE_FILE="${STATE_FILE:-/var/tmp/pve-fan-control.state}"
 
@@ -47,16 +45,19 @@ ipmi() {
 }
 
 get_temp() {
-    local name out temp
-    for name in "${SENSOR_NAMES[@]}"; do
-        if out="$(ipmi sensor reading "$name" 2>/dev/null)"; then
-            temp="$(printf '%s' "$out" | grep -oE '[-0-9]+' | head -n1)"
-            if [[ -n "$temp" ]]; then
-                printf '%s' "$temp"
-                return 0
-            fi
+    local name out temp max=0
+    # Collect every CPU "Temp" sensor and return the maximum.
+    while IFS= read -r temp; do
+        if [[ "$temp" =~ ^-?[0-9]+$ ]] && (( temp > max )); then
+            max=$temp
         fi
-    done
+    done < <(ipmi sensor list 2>/dev/null | awk -F'|' '
+        { gsub(/^ +| +$/, "", $1); gsub(/^ +| +$/, "", $2)
+          if ($1 == "Temp" && $2 ~ /[0-9]/) print $2 + 0 }')
+    if (( max > 0 )); then
+        printf '%s' "$max"
+        return 0
+    fi
     return 1
 }
 
