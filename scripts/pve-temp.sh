@@ -30,10 +30,13 @@ color_for() {
 
 fetch_temps() {
     ipmi sensor list | awk -F'|' '
-        /temp|Temp/ {
-            gsub(/^ +| +$/, "", $1); gsub(/^ +| +$/, "", $2)
-            gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $4)
-            if ($2 ~ /[0-9]/) printf "%s|%s|%s|%s\n", $1, $2+0, $3, $4
+        {
+            gsub(/^ +| +$/, "", $1)
+            if ($1 == "Temp") {
+                gsub(/^ +| +$/, "", $2)
+                gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $4)
+                if ($2 ~ /[0-9]/) printf "%s|%s|%s|%s\n", "Temp", $2+0, $3, $4
+            }
         }'
 }
 
