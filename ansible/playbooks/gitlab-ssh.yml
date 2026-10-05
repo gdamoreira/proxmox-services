@@ -1,8 +1,9 @@
 ---
 # GitLab SSH setup (stable state):
 #   - gitlab-sshd serves Git on port 22 (needs CAP_NET_BIND_SERVICE)
-#   - OpenSSH serves OS/root admin on port 2223 (no AuthorizedKeysCommand,
-#     which would break root key auth)
+#   - OpenSSH serves OS/root admin on port 2223
+#   - ssh.socket must listen on 2223, otherwise systemd (socket activation)
+#     grabs port 22 at boot and gitlab-sshd cannot bind it.
 - hosts: gitlab
   gather_facts: false
   become: true
@@ -20,17 +21,35 @@
         regexp: '^Port '
         line: 'Port 2223'
 
+    - name: Override ssh.socket to listen on 2223 (free port 22 for gitlab-sshd)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/ssh.socket.d/override.conf
+        content: |
+          [Socket]
+          ListenStream=
+          ListenStream=2223
+        mode: "0644"
+      notify: Reload systemd and restart ssh socket
+
     - name: Grant gitlab-sshd CAP_NET_BIND_SERVICE (bind privileged port 22)
       ansible.builtin.command: setcap cap_net_bind_service=+ep /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-sshd
       register: setcap
       changed_when: setcap.rc == 0
 
-    - name: Restart sshd (OpenSSH)
-      ansible.builtin.systemd:
-        name: ssh
-        state: restarted
+    - name: Flush handlers
+      ansible.builtin.meta: flush_handlers
 
     - name: Ensure gitlab-sshd is running
       ansible.builtin.command: gitlab-ctl start gitlab-sshd
       register: gitlabsshd
       changed_when: gitlabsshd.rc == 0
+
+  handlers:
+    - name: Reload systemd and restart ssh socket
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: restarted
+        daemon_reload: true
+      loop:
+        - ssh.socket
+        - ssh.service

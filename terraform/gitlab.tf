@@ -3,7 +3,8 @@ resource "proxmox_lxc" "gitlab" {
   target_node     = var.proxmox_secondary_instance
   hostname        = "gitlab"
   cores           = 8
-  memory          = 8192
+  memory          = 16384
+  swap            = 4096
   ostemplate      = "local:vztmpl/ubuntu-22.04-standard_22.04-1_amd64.tar.zst"
   unprivileged    = false
   ostype          = "ubuntu"
