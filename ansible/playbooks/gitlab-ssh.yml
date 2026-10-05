@@ -1,30 +1,36 @@
 ---
-# Fix git+ssh on the GitLab host by routing Git authentication through
-# gitlab-shell while keeping OpenSSH (port 22) for OS/root access.
+# GitLab SSH setup (stable state):
+#   - gitlab-sshd serves Git on port 22 (needs CAP_NET_BIND_SERVICE)
+#   - OpenSSH serves OS/root admin on port 2223 (no AuthorizedKeysCommand,
+#     which would break root key auth)
 - hosts: gitlab
   gather_facts: false
   become: true
   tasks:
-    - name: Ensure gitlab-shell AuthorizedKeysCommand in sshd_config
+    - name: Ensure no AuthorizedKeysCommand in sshd_config (breaks root auth)
       ansible.builtin.blockinfile:
         path: /etc/ssh/sshd_config
         marker: "# {mark} ANSIBLE GITLAB SSH"
-        block: |
-          AuthorizedKeysCommand /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-shell-authorized-keys-check %u %u %k
-          AuthorizedKeysCommandUser git
+        block: ""
+        state: absent
 
-    - name: Set git user shell to gitlab-shell
-      ansible.builtin.user:
-        name: git
-        shell: /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-shell
+    - name: Ensure OpenSSH listens on port 2223
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^Port '
+        line: 'Port 2223'
 
-    - name: Validate sshd_config
-      ansible.builtin.command: sshd -t
-      register: sshd_test
-      changed_when: false
-      failed_when: sshd_test.rc != 0
+    - name: Grant gitlab-sshd CAP_NET_BIND_SERVICE (bind privileged port 22)
+      ansible.builtin.command: setcap cap_net_bind_service=+ep /opt/gitlab/embedded/service/gitlab-shell/bin/gitlab-sshd
+      register: setcap
+      changed_when: setcap.rc == 0
 
-    - name: Restart sshd
+    - name: Restart sshd (OpenSSH)
       ansible.builtin.systemd:
         name: ssh
         state: restarted
+
+    - name: Ensure gitlab-sshd is running
+      ansible.builtin.command: gitlab-ctl start gitlab-sshd
+      register: gitlabsshd
+      changed_when: gitlabsshd.rc == 0
