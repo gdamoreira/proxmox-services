@@ -2,7 +2,7 @@ resource "proxmox_lxc" "suwayomi" {
   target_node     = var.proxmox_instance
   hostname        = "suwayomi"
   cores           = 2
-  memory          = 4096
+  memory          = 8192
   ostype          = "debian"
   swap            = 1024
   ostemplate      = "local:vztmpl/debian-12-standard_12.7-1_amd64.tar.zst"
