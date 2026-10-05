@@ -73,6 +73,7 @@
     - "{{ suwayomi_data_dir }}"
     - "{{ suwayomi_data_dir }}/downloads"
     - "{{ suwayomi_data_dir }}/files"
+    - "{{ suwayomi_pg_data_dir }}"
     - "{{ suwayomi_compose_dir }}"
 
 - name: Ensure Docker is running

@@ -12,12 +12,45 @@ services:
       - FLARESOLVERR_URL=http://127.0.0.1:8191
       - BIND_IP=0.0.0.0
       - DOWNLOAD_AS_CBZ=true
+      - DATABASE_TYPE={{ 'POSTGRESQL' if suwayomi_db_type == 'postgres' else 'H2' }}
+{% if suwayomi_db_type == 'postgres' %}
+      - DATABASE_URL=postgresql://127.0.0.1:{{ suwayomi_pg_port }}/{{ suwayomi_pg_db }}
+      - DATABASE_USERNAME={{ suwayomi_pg_user }}
+      - DATABASE_PASSWORD={{ suwayomi_pg_password }}
+      - USE_HIKARI_CONNECTION_POOL=true
+{% endif %}
       - EXTENSION_REPOS=["https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json", "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.pb"]
       - EXTENSION_STORES=["https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.min.json", "https://raw.githubusercontent.com/keiyoushi/extensions/repo/index.pb"]
     volumes:
       - {{ suwayomi_data_dir }}/downloads:/home/suwayomi/.local/share/Tachidesk/downloads
       - {{ suwayomi_data_dir }}/files:/home/suwayomi/.local/share/Tachidesk
     restart: on-failure:3
+{% if suwayomi_db_type == 'postgres' %}
+    depends_on:
+      postgresql:
+        condition: service_healthy
+        restart: true
+  postgresql:
+    image: {{ suwayomi_pg_image }}
+    network_mode: host
+    command: ["-c", "listen_addresses=127.0.0.1", "-p", "{{ suwayomi_pg_port }}"]
+    environment:
+      - POSTGRES_USER={{ suwayomi_pg_user }}
+      - POSTGRES_PASSWORD={{ suwayomi_pg_password }}
+      - POSTGRES_DB={{ suwayomi_pg_db }}
+      - PGDATA=/data/postgres
+      - TZ={{ timezone }}
+    volumes:
+      - {{ suwayomi_pg_data_dir }}:/data/postgres
+    shm_size: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U {{ suwayomi_pg_user }} -d {{ suwayomi_pg_db }} -p {{ suwayomi_pg_port }}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+{% endif %}
   flaresolverr:
     image: ghcr.io/thephaseless/byparr:latest
     container_name: flaresolverr

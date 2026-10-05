@@ -3,3 +3,12 @@ suwayomi_compose_dir: "/root/suwayomi"
 suwayomi_port: 4567
 timezone: "Etc/UTC"
 suwayomi_restore_src: ""
+
+# Database backend: "postgres" (default) or "h2" (rollback)
+suwayomi_db_type: "postgres"
+suwayomi_pg_image: "postgres:18"
+suwayomi_pg_user: "suwayomi"
+suwayomi_pg_db: "suwayomi"
+suwayomi_pg_password: "FJD9tL6iP0B1RV39IlOs9kWzD5C2"
+suwayomi_pg_port: 5432
+suwayomi_pg_data_dir: "/var/suwayomi/postgres"
