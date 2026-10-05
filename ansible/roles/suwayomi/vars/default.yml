@@ -4,6 +4,9 @@ suwayomi_port: 4567
 timezone: "Etc/UTC"
 suwayomi_restore_src: ""
 
+# Set false to skip the full OS/dependency upgrade (e.g. during a migration window)
+suwayomi_upgrade_deps: true
+
 # Database backend: "postgres" (default) or "h2" (rollback)
 suwayomi_db_type: "postgres"
 suwayomi_pg_image: "postgres:18"

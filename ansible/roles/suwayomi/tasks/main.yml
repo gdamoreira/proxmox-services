@@ -7,12 +7,12 @@
   ansible.builtin.apt:
     update_cache: true
     upgrade: full
-  when: ansible_facts.os_family == "Debian"
+  when: ansible_facts.os_family == "Debian" and suwayomi_upgrade_deps | bool
 
 - name: Upgrade dependencies (Alpine)
   community.general.apk:
     upgrade: true
-  when: ansible_facts.os_family == "Alpine"
+  when: ansible_facts.os_family == "Alpine" and suwayomi_upgrade_deps | bool
 
 - name: Install prerequisites (Debian)
   ansible.builtin.apt:
