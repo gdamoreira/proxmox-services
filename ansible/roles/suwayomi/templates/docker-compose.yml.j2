@@ -1,3 +1,4 @@
+{% set db_type = suwayomi_effective_db_type | default(suwayomi_db_type) %}
 ---
 services:
   suwayomi:
@@ -12,8 +13,8 @@ services:
       - FLARESOLVERR_URL=http://127.0.0.1:8191
       - BIND_IP=0.0.0.0
       - DOWNLOAD_AS_CBZ=true
-      - DATABASE_TYPE={{ 'POSTGRESQL' if suwayomi_db_type == 'postgres' else 'H2' }}
-{% if suwayomi_db_type == 'postgres' %}
+      - DATABASE_TYPE={{ 'POSTGRESQL' if db_type == 'postgres' else 'H2' }}
+{% if db_type == 'postgres' %}
       - DATABASE_URL=postgresql://127.0.0.1:{{ suwayomi_pg_port }}/{{ suwayomi_pg_db }}
       - DATABASE_USERNAME={{ suwayomi_pg_user }}
       - DATABASE_PASSWORD={{ suwayomi_pg_password }}
@@ -25,7 +26,7 @@ services:
       - {{ suwayomi_data_dir }}/downloads:/home/suwayomi/.local/share/Tachidesk/downloads
       - {{ suwayomi_data_dir }}/files:/home/suwayomi/.local/share/Tachidesk
     restart: on-failure:3
-{% if suwayomi_db_type == 'postgres' %}
+{% if db_type == 'postgres' %}
     depends_on:
       postgresql:
         condition: service_healthy

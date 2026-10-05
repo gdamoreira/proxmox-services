@@ -1,0 +1,38 @@
+#!/bin/bash
+set -euo pipefail
+
+# Roll Suwayomi back to the embedded H2 database.
+# The H2 database file and the original H2 compose are preserved, so this is a
+# config revert + restart. The PostgreSQL volume is intentionally kept.
+
+COMPOSE_DIR="{{ suwayomi_compose_dir }}"
+PG_DATA_DIR="{{ suwayomi_pg_data_dir }}"
+
+if [ ! -f "$COMPOSE_DIR/docker-compose.h2.yml" ]; then
+  echo "ERROR: $COMPOSE_DIR/docker-compose.h2.yml not found (redeploy the suwayomi role)"
+  exit 1
+fi
+if [ ! -f "{{ suwayomi_data_dir }}/files/database.mv.db" ]; then
+  echo "ERROR: H2 database {{ suwayomi_data_dir }}/files/database.mv.db not found"
+  exit 1
+fi
+
+echo "Rollback Suwayomi to H2"
+read -r -p "Switch Suwayomi back to the H2 database? [y/N] " a
+[ "$a" = "y" ] || { echo "aborted"; exit 1; }
+
+echo "Stopping current stack..."
+docker compose -f "$COMPOSE_DIR/docker-compose.yml" down
+
+echo "Switching compose to H2..."
+cp "$COMPOSE_DIR/docker-compose.yml" "$COMPOSE_DIR/docker-compose.postgres.yml.bak.$(date +%s)" 2>/dev/null || true
+cp "$COMPOSE_DIR/docker-compose.h2.yml" "$COMPOSE_DIR/docker-compose.yml"
+
+echo "Starting on H2..."
+docker compose -f "$COMPOSE_DIR/docker-compose.yml" up -d
+sleep 20
+
+echo "PostgreSQL container removed; data volume kept at $PG_DATA_DIR"
+echo "Health check..."
+code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4567/api/v1/backup/export 2>/dev/null || echo 000)
+echo "ROLLBACK COMPLETE (HTTP $code)"

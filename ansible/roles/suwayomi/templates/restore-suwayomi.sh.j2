@@ -1,0 +1,71 @@
+#!/bin/bash
+set -euo pipefail
+
+# Restore Suwayomi from a pg_dump backup (+ optional config tar).
+# Usage: restore-suwayomi.sh [dump-path] [config-tar-path]
+#   With no args, uses the newest dump/config in the backup directory.
+
+BACKUP_DIR="{{ suwayomi_backup_dir }}"
+COMPOSE_DIR="{{ suwayomi_compose_dir }}"
+DATA_DIR="{{ suwayomi_data_dir }}"
+PG_USER="{{ suwayomi_pg_user }}"
+PG_DB="{{ suwayomi_pg_db }}"
+
+DUMP="${1:-}"
+CFG="${2:-}"
+[ -z "$DUMP" ] && DUMP=$(ls -t "$BACKUP_DIR"/suwayomi-db-*.dump 2>/dev/null | head -1 || true)
+[ -z "$CFG" ] && CFG=$(ls -t "$BACKUP_DIR"/suwayomi-config-*.tar.gz 2>/dev/null | head -1 || true)
+
+if [ -z "$DUMP" ] || [ ! -f "$DUMP" ]; then
+  echo "ERROR: dump file not found (looked in $BACKUP_DIR)"
+  exit 1
+fi
+
+echo "Restore Suwayomi"
+echo "  dump:   $DUMP"
+echo "  config: ${CFG:-<none/keep current>}"
+read -r -p "This will REPLACE the current database (and config if given). Continue? [y/N] " a
+[ "$a" = "y" ] || { echo "aborted"; exit 1; }
+
+C=$(docker ps -qf name=postgresql | head -1)
+[ -n "$C" ] || { echo "ERROR: postgresql container not running"; exit 1; }
+
+echo "Stopping suwayomi..."
+docker compose -f "$COMPOSE_DIR/docker-compose.yml" stop suwayomi
+
+echo "Recreating database..."
+docker exec "$C" dropdb -U "$PG_USER" --if-exists "$PG_DB"
+docker exec "$C" createdb -U "$PG_USER" "$PG_DB"
+
+echo "Restoring dump..."
+docker exec -i "$C" pg_restore -U "$PG_USER" -d "$PG_DB" < "$DUMP"
+
+if [ -n "$CFG" ] && [ -f "$CFG" ]; then
+  echo "Restoring config/files from $CFG..."
+  tar xzf "$CFG" -C "$DATA_DIR"
+fi
+
+echo "Starting suwayomi..."
+docker compose -f "$COMPOSE_DIR/docker-compose.yml" up -d suwayomi
+sleep 30
+
+# A fresh database loses extension registration (Tachiyomi backups exclude
+# extensions). Re-register the extensions whose jars are still on disk.
+echo "Reinstalling extensions from local jars..."
+for jar in "$DATA_DIR"/files/extensions/*.jar; do
+  [ -e "$jar" ] || continue
+  base=$(basename "$jar" .jar)
+  body=${base#tachiyomi-}
+  pkg=$(printf "%s" "$body" | sed -E 's/-v[0-9].*$//')
+  curl -s -X POST http://127.0.0.1:4567/api/graphql -H 'Content-Type: application/json' \
+    -d "{\"query\":\"mutation { updateExtension(input: { id: \\\"eu.kanade.tachiyomi.extension.$pkg\\\", patch: { install: true } }) { __typename } }\"}" >/dev/null 2>&1 || true
+done
+
+echo "Health check..."
+code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4567/api/v1/backup/export 2>/dev/null || echo 000)
+if [ "$code" = "200" ]; then
+  echo "RESTORE COMPLETE (HTTP $code)"
+else
+  echo "WARNING: health check returned HTTP $code"
+  exit 1
+fi

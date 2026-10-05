@@ -100,6 +100,26 @@
     dest: "{{ suwayomi_compose_dir }}/update.sh"
     mode: "0755"
 
+- name: Deploy H2 fallback compose (used by rollback)
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ suwayomi_compose_dir }}/docker-compose.h2.yml"
+    mode: "0644"
+  vars:
+    suwayomi_effective_db_type: "h2"
+
+- name: Deploy rollback script
+  ansible.builtin.template:
+    src: rollback-suwayomi-h2.sh.j2
+    dest: /usr/local/bin/rollback-suwayomi-h2.sh
+    mode: "0700"
+
+- name: Deploy restore script
+  ansible.builtin.template:
+    src: restore-suwayomi.sh.j2
+    dest: /usr/local/bin/restore-suwayomi.sh
+    mode: "0700"
+
 - name: Ensure suwayomi is running
   community.docker.docker_compose_v2:
     project_src: "{{ suwayomi_compose_dir }}"
@@ -130,38 +150,8 @@
 #
 # Database restore (run with --tags restore)
 #
-- name: Stop containers for restore
-  community.docker.docker_compose_v2:
-    project_src: "{{ suwayomi_compose_dir }}"
-    state: stopped
-  tags: [restore, never]
-
-- name: Copy backup archive to LXC
-  ansible.builtin.copy:
-    src: "{{ suwayomi_restore_src }}"
-    dest: /tmp/suwayomi-restore.tar.gz
-    mode: "0644"
+- name: Restore database from backup
+  ansible.builtin.command:
+    cmd: "/usr/local/bin/restore-suwayomi.sh {{ suwayomi_restore_src }} {{ suwayomi_restore_config_src }}"
   when: suwayomi_restore_src | length > 0
-  tags: [restore, never]
-
-- name: Extract database and config from backup
-  ansible.builtin.unarchive:
-    src: /tmp/suwayomi-restore.tar.gz
-    dest: /var/suwayomi/files
-    remote_src: true
-  when: suwayomi_restore_src | length > 0
-  tags: [restore, never]
-
-- name: Fix ownership
-  ansible.builtin.file:
-    path: /var/suwayomi/files
-    owner: root
-    group: root
-    recurse: true
-  tags: [restore, never]
-
-- name: Start containers after restore
-  community.docker.docker_compose_v2:
-    project_src: "{{ suwayomi_compose_dir }}"
-    state: present
   tags: [restore, never]

@@ -3,6 +3,7 @@ suwayomi_compose_dir: "/root/suwayomi"
 suwayomi_port: 4567
 timezone: "Etc/UTC"
 suwayomi_restore_src: ""
+suwayomi_restore_config_src: ""
 
 # Set false to skip the full OS/dependency upgrade (e.g. during a migration window)
 suwayomi_upgrade_deps: true
@@ -15,3 +16,6 @@ suwayomi_pg_db: "suwayomi"
 suwayomi_pg_password: "FJD9tL6iP0B1RV39IlOs9kWzD5C2"
 suwayomi_pg_port: 5432
 suwayomi_pg_data_dir: "/var/suwayomi/postgres"
+
+# Backup artifacts location (NFS/CIFS mounted on the host)
+suwayomi_backup_dir: "/mnt/backup/server-backups/suwayomi"
