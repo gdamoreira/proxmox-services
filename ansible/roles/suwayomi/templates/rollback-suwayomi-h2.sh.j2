@@ -18,8 +18,10 @@ if [ ! -f "{{ suwayomi_data_dir }}/files/database.mv.db" ]; then
 fi
 
 echo "Rollback Suwayomi to H2"
-read -r -p "Switch Suwayomi back to the H2 database? [y/N] " a
-[ "$a" = "y" ] || { echo "aborted"; exit 1; }
+if [ "${FORCE:-0}" != "1" ]; then
+  read -r -p "Switch Suwayomi back to the H2 database? [y/N] " a
+  [ "$a" = "y" ] || { echo "aborted"; exit 1; }
+fi
 
 echo "Stopping current stack..."
 docker compose -f "$COMPOSE_DIR/docker-compose.yml" down
@@ -35,9 +37,14 @@ sleep 20
 echo "PostgreSQL container removed; data volume kept at $PG_DATA_DIR"
 echo "Health check..."
 code=000
-for i in $(seq 1 30); do
+for _ in $(seq 1 30); do
   code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4567/api/v1/backup/export 2>/dev/null || echo 000)
   [ "$code" = "200" ] && break
   sleep 5
 done
-echo "ROLLBACK COMPLETE (HTTP $code)"
+if [ "$code" = "200" ]; then
+  echo "ROLLBACK COMPLETE (HTTP $code)"
+else
+  echo "WARNING: health check returned HTTP $code"
+  exit 1
+fi

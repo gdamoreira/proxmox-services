@@ -31,6 +31,11 @@ tar czf "$CFG" --warning=no-file-changed \
   --exclude='files/database.*.sql' \
   --exclude='files/backups' \
   -C {{ suwayomi_data_dir }} files 2>/dev/null || true
+if [ ! -s "$CFG" ]; then
+  echo "ERROR: config archive is empty"
+  rm -f "$CFG"
+  exit 1
+fi
 cp "$CFG" "$BACKUP_BASE/"
 
 rm -f "$DUMP" "$CFG"

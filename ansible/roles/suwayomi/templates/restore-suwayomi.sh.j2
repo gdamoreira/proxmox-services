@@ -2,32 +2,43 @@
 set -euo pipefail
 
 # Restore Suwayomi from a pg_dump backup (+ optional config tar).
-# Usage: restore-suwayomi.sh [dump-path] [config-tar-path]
-#   With no args, uses the newest dump/config in the backup directory.
+# Usage: restore-suwayomi.sh [dump-path|auto] [config-path|auto|none]
+#   dump   : path or "auto"/empty -> newest dump in the backup directory
+#   config : path, "auto" -> newest config tar, "none"/empty/unset -> skip
+# Non-interactive: set FORCE=1 to skip the confirmation prompt.
 
 BACKUP_DIR="{{ suwayomi_backup_dir }}"
 COMPOSE_DIR="{{ suwayomi_compose_dir }}"
 DATA_DIR="{{ suwayomi_data_dir }}"
 PG_USER="{{ suwayomi_pg_user }}"
 PG_DB="{{ suwayomi_pg_db }}"
+API="http://127.0.0.1:4567/api/graphql"
 
 DUMP="${1:-}"
-CFG="${2:-}"
-[ -z "$DUMP" ] && DUMP=$(ls -t "$BACKUP_DIR"/suwayomi-db-*.dump 2>/dev/null | head -1 || true)
-[ -z "$CFG" ] && CFG=$(ls -t "$BACKUP_DIR"/suwayomi-config-*.tar.gz 2>/dev/null | head -1 || true)
-
+if [ -z "$DUMP" ] || [ "$DUMP" = "auto" ]; then
+  DUMP=$(ls -t "$BACKUP_DIR"/suwayomi-db-*.dump 2>/dev/null | head -1 || true)
+fi
 if [ -z "$DUMP" ] || [ ! -f "$DUMP" ]; then
   echo "ERROR: dump file not found (looked in $BACKUP_DIR)"
   exit 1
 fi
 
+CFG="${2-}"
+case "$CFG" in
+  auto) CFG=$(ls -t "$BACKUP_DIR"/suwayomi-config-*.tar.gz 2>/dev/null | head -1 || true) ;;
+  ""|none|unset) CFG="" ;;
+esac
+
 echo "Restore Suwayomi"
 echo "  dump:   $DUMP"
 echo "  config: ${CFG:-<none/keep current>}"
-read -r -p "This will REPLACE the current database (and config if given). Continue? [y/N] " a
-[ "$a" = "y" ] || { echo "aborted"; exit 1; }
+if [ "${FORCE:-0}" != "1" ]; then
+  read -r -p "This will REPLACE the current database (and config if given). Continue? [y/N] " a
+  [ "$a" = "y" ] || { echo "aborted"; exit 1; }
+fi
 
-C=$(docker ps -qf name=postgresql | head -1)
+C=$(docker ps -q -f name=postgresql)
+C=$(printf '%s' "$C" | head -1)
 [ -n "$C" ] || { echo "ERROR: postgresql container not running"; exit 1; }
 
 echo "Stopping suwayomi..."
@@ -36,6 +47,11 @@ docker compose -f "$COMPOSE_DIR/docker-compose.yml" stop suwayomi
 echo "Recreating database..."
 docker exec "$C" dropdb -U "$PG_USER" --if-exists "$PG_DB"
 docker exec "$C" createdb -U "$PG_USER" "$PG_DB"
+
+if [ -f "$DUMP.sha256" ]; then
+  echo "Verifying checksum..."
+  (cd "$(dirname "$DUMP")" && sha256sum -c "$(basename "$DUMP").sha256")
+fi
 
 echo "Restoring dump..."
 docker exec -i "$C" pg_restore -U "$PG_USER" -d "$PG_DB" < "$DUMP"
@@ -47,30 +63,47 @@ fi
 
 echo "Starting suwayomi..."
 docker compose -f "$COMPOSE_DIR/docker-compose.yml" up -d suwayomi
-sleep 30
 
-# A fresh database loses extension registration (Tachiyomi backups exclude
-# extensions). Re-register the extensions whose jars are still on disk.
-echo "Reinstalling extensions from local jars..."
-for jar in "$DATA_DIR"/files/extensions/*.jar; do
-  [ -e "$jar" ] || continue
-  base=$(basename "$jar" .jar)
-  body=${base#tachiyomi-}
-  pkg=$(printf "%s" "$body" | sed -E 's/-v[0-9].*$//')
-  curl -s -X POST http://127.0.0.1:4567/api/graphql -H 'Content-Type: application/json' \
-    -d "{\"query\":\"mutation { updateExtension(input: { id: \\\"eu.kanade.tachiyomi.extension.$pkg\\\", patch: { install: true } }) { __typename } }\"}" >/dev/null 2>&1 || true
-done
-
-echo "Health check..."
-code=000
-for i in $(seq 1 30); do
+echo "Waiting for Suwayomi to become ready..."
+ready=0
+for _ in $(seq 1 30); do
   code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4567/api/v1/backup/export 2>/dev/null || echo 000)
-  [ "$code" = "200" ] && break
+  [ "$code" = "200" ] && { ready=1; break; }
   sleep 5
 done
-if [ "$code" = "200" ]; then
-  echo "RESTORE COMPLETE (HTTP $code)"
-else
-  echo "WARNING: health check returned HTTP $code"
+[ "$ready" = "1" ] || { echo "ERROR: Suwayomi did not become ready"; exit 1; }
+
+# A fresh database loses extension registration (Tachiyomi backups exclude
+# extensions). Refresh the store catalog, then re-register each extension whose
+# jar is still on disk.
+echo "Refreshing extension catalog..."
+curl -s -X POST "$API" -H 'Content-Type: application/json' \
+  -d '{"query":"mutation { fetchExtensions(input: {}) { __typename } }"}' >/dev/null
+
+echo "Reinstalling extensions from local jars..."
+ext_failed=0
+for jar in "$DATA_DIR"/files/extensions/*.jar; do
+  [ -e "$jar" ] || continue
+  base=$(basename "$jar")
+  if ! printf '%s' "$base" | grep -qE '^tachiyomi-.+-v[0-9].*\.jar$'; then
+    echo "  SKIP $base (unrecognized name)"
+    continue
+  fi
+  pkg=$(printf '%s' "${base%.jar}" | sed -E 's/^tachiyomi-//; s/-v[0-9].*$//')
+  pkgname="eu.kanade.tachiyomi.extension.$pkg"
+  resp=$(curl -s -X POST "$API" -H 'Content-Type: application/json' \
+    -d "{\"query\":\"mutation { updateExtension(input: { id: \\\"$pkgname\\\", patch: { install: true } }) { __typename } }\"}")
+  if printf '%s' "$resp" | grep -q UpdateExtensionPayload; then
+    echo "  OK   $pkgname"
+  else
+    echo "  FAIL $pkgname :: $(printf '%s' "$resp" | head -c 160)"
+    ext_failed=1
+  fi
+done
+
+if [ "$ext_failed" != "0" ]; then
+  echo "WARNING: some extensions failed to reinstall"
   exit 1
 fi
+
+echo "RESTORE COMPLETE"

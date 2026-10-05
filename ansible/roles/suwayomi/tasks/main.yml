@@ -152,6 +152,8 @@
 #
 - name: Restore database from backup
   ansible.builtin.command:
-    cmd: "/usr/local/bin/restore-suwayomi.sh {{ suwayomi_restore_src }} {{ suwayomi_restore_config_src }}"
+    cmd: "/usr/local/bin/restore-suwayomi.sh {{ suwayomi_restore_src }} {{ suwayomi_restore_config_src if suwayomi_restore_config_src | length > 0 else 'none' }}"
+  environment:
+    FORCE: "1"
   when: suwayomi_restore_src | length > 0
   tags: [restore, never]
