@@ -62,7 +62,12 @@ for jar in "$DATA_DIR"/files/extensions/*.jar; do
 done
 
 echo "Health check..."
-code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4567/api/v1/backup/export 2>/dev/null || echo 000)
+code=000
+for i in $(seq 1 30); do
+  code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4567/api/v1/backup/export 2>/dev/null || echo 000)
+  [ "$code" = "200" ] && break
+  sleep 5
+done
 if [ "$code" = "200" ]; then
   echo "RESTORE COMPLETE (HTTP $code)"
 else
